@@ -137,6 +137,173 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-深入理解插件化之Classloader类加载（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">深入理解插件化之Classloader类加载（一）</a>
+    </h1>
+  
+
+        
+        <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-01-15T04:30:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-插件化的来源"><a href="#一-插件化的来源" class="headerlink" title="一.插件化的来源"></a>一.插件化的来源</h2><p>&emsp;&emsp;<br>插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK<br>独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。</p>
+<hr>
+<h2 id="二-插件化所要解决的问题"><a href="#二-插件化所要解决的问题" class="headerlink" title="二.插件化所要解决的问题"></a>二.插件化所要解决的问题</h2><ul>
+<li>减少APP体积，随着逐渐的迭代开发APP的功能模块越来越多，apk体积会越来越大</li>
+<li>降低模块之间的耦合度</li>
+<li>应用的方法数目可能超过65535，APP占用的内存过大</li>
+</ul>
+<hr>
+<h2 id="三-插件化的开源框架"><a href="#三-插件化的开源框架" class="headerlink" title="三.插件化的开源框架"></a>三.插件化的开源框架</h2><p>目前市面上的插件化框架较多，建议根据具体项目需求选择<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JDzeusIyomjdDyQKLXLdwrvO9IzHy.tDxfg2ru1be82K.wLM9bxPSapKvauNskDRrQ!!/b&bo=jQMeAo0DHgIDCSw!&rf=viewer_4" alt="class">  </p>
+<hr>
+<h2 id="四-插件化的简单分析"><a href="#四-插件化的简单分析" class="headerlink" title="四.插件化的简单分析"></a>四.插件化的简单分析</h2><p>&emsp;&emsp;1.插件apk是没有安装的，那我们怎么加载它呢？一个apk主要就是由代码和资源组成，所以上面的问题我们可以变为：class类的插件化，资源插件化。<br><br/><br>&emsp;&emsp;2.Activity等组件是有生命周期的，它们统一由系统服务AMS管理；使用ClassLoader可以从插件中创建Activity对象，但是Activity需要管理生命周期，所以需要想办法把我们加载进来的Activity等组件交给系统管理，让AMS赋予组件生命周期。</p>
+<hr>
+<h2 id="五-插件的类加载机制Classloader"><a href="#五-插件的类加载机制Classloader" class="headerlink" title="五.插件的类加载机制Classloader"></a>五.插件的类加载机制Classloader</h2><p><br/>&emsp;&emsp;ClassLoader的实现类主要分为两种类型：系统类加载器和自定义加载器。其中系统类加载器主要包括三种：<br/></p>
+<p>类名 | 用处<br>—|—|—<br>BootClassLoader  | 用于加载Android Framework层class文件<br>PathClassLoader | 用于Android应用程序类加载器。可以加载指定的dex，以及jar、zip、apk中的classes.dex<br>DexClassLoader | 用于加载指定的dex，以及jar、zip、apk中的class<br>彼此间的继承关系如下图：<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"><br><br/>2.具体分析<br><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。<br><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：<br>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器<br><br/>3.双亲委托机制<br><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。<br><br/>具体源码分析如下：</p>
+<pre><code>// /libcore/ojluni/src/main/java/java/lang/ClassLoader.java 
+protected Class&lt;?&gt; loadClass(String name, boolean resolve) 
+    throws ClassNotFoundException{ 
+    // 检测这个类是否已经被加载 --&gt; 1 Class&lt;?&gt; c = findLoadedClass(name); 
+    if (c == null) { 
+        try {
+            if (parent != null) { 
+            //如果parent不为null，则调用parent的loadClass进行加载 
+            c = parent.loadClass(name, false); 
+        } else { 
+            // 正常情况下不会走这儿，因为 BootClassLoader 重写了 loadClass 方法，结束了递归 
+            c=findBootstrapClassOrNull(name);
+            } 
+        } 
+        catch (ClassNotFoundException e) { }
+        if (c == null) { 
+        // 如果仍然找不到，就调用 findClass 去查找 --&gt; 2 
+        c = findClass(name); 
+        }
+    }
+    return c; 
+}
+// --&gt;1 检测这个类是否已经被加载 
+protected final Class&lt;?&gt; findLoadedClass(String name) { 
+    ClassLoader loader; 
+    if (this == BootClassLoader.getInstance()) 
+        loader = null; 
+    else
+        loader = this; 
+    // 最后通过 native 方法实现查找 
+    return VMClassLoader.findLoadedClass(loader, name); 
+}
+// --&gt;2 加载器一般都会重写这个方法，定义自己的加载规则 
+protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException { 
+    throw new ClassNotFoundException(name); 
+}
+// /libcore/libart/src/main/java/java/lang/VMClassLoader.java native static Class findLoadedClass(ClassLoader cl, String nam</code></pre><p><br/>4.class类的加载流程图<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JClRCkHsOaS3XHWEGjmbPDQQqhdl4emB3kO0SFJYkZ0787Z70tPnVIQnOjo*L*229Q!!/b&bo=XwU4BAAAAAADB0Q!&rf=viewer_4" alt="class"></p>
+<hr>
+<h2 id="六-具体实现代码以及流程图"><a href="#六-具体实现代码以及流程图" class="headerlink" title="六.具体实现代码以及流程图"></a>六.具体实现代码以及流程图</h2><p><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4" alt="class"></p>
+<pre><code>public static void loadClass(Context context) { 
+    try {
+        // 获取 pathList 的字段 
+        Class baseDexClassLoaderClass = Class.forName(&quot;dalvik.system.BaseDexClassLoader&quot;); 
+        Field pathListField = baseDexClassLoaderClass.getDeclaredField(&quot;pathList&quot;); pathListField.setAccessible(true); 
+
+        // 获取 dexElements 字段
+        class&lt;?&gt; dexPathListClass = Class.forName(&quot;dalvik.system.DexPathList&quot;); Field dexElementsField = dexPathListClass.getDeclaredField(&quot;dexElements&quot;); dexElementsField.setAccessible(true) 
+
+        //获取插件的 dexElements[] 
+        //获取 DexClassLoader 类中的属性 pathList 的值
+        DexClassLoader dexClassLoader = new DexClassLoader(apkPath, context.getCacheDir().getAbsolutePath(), null, context.getClassLoader()); 
+        Object pluginPathList = pathListField.get(dexClassLoader); 
+
+        // 获取 pathList 中的属性 dexElements[] 的值--- 插件的 dexElements[] 
+        Object[] pluginDexElements = (Object[]) dexElementsField.get(pluginPathList);
+
+        //获取宿主的 dexElements[] 
+        // 获取 PathClassLoader 类中的属性 pathList 的值
+        PathClassLoader pathClassLoader = (PathClassLoader) context.getClassLoader(); 
+        Object hostPathList = pathListField.get(pathClassLoader); 
+
+        // 获取 pathList 中的属性 dexElements[] 的值--- 宿主的 dexElements[] 
+        Object[] hostDexElements = (Object[]) dexElementsField.get(hostPathList); 
+
+        // 将插件的 dexElements[] 和宿主的 dexElements[] 合并为一个新的 dexElements[]
+        // 创建一个新的空数组，第一个参数是数组的类型，第二个参数是数组的长度 
+        Object[] dexElements = (Object[]) Array.newInstance( hostDexElements.getClass().getComponentType(), pluginDexElements.length + hostDexElements.length); 
+        // 将插件和宿主的 dexElements[] 的值放入新的数组中 
+        System.arraycopy(hostDexElements, 0, dexElements,0, hostDexElements.length); System.arraycopy(pluginDexElements, 0, dexElements,hostDexElements.length, pluginDexElements.length); 
+        // 将生成的新值赋给 &quot;dexElements&quot; 属性 
+        hostDexElementsField.set(hostPathList, dexElements); 
+    } catch (Exception e) { 
+        e.printStackTrace(); 
+    }
+}</code></pre><hr>
+<h2 id="六-小结"><a href="#六-小结" class="headerlink" title="六.小结"></a>六.小结</h2><p><br/>&emsp;&emsp;至此，插件化的Class加载机制分析完毕，后续会针对资源插件化和activity插件化写文章</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Classloader</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-无痕埋点ASM设计方案" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -144,20 +311,20 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/03/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
+      <a class="article-title" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
     </h1>
   
 
         
-        <a href="/2020/03/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-03-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-03-13</time>
+        <a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
+  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据。</p>
+        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据</p>
 <hr>
 <h2 id="二-实现方案缺点比较"><a href="#二-实现方案缺点比较" class="headerlink" title="二.实现方案缺点比较"></a>二.实现方案缺点比较</h2><ul>
 <li>静态代理</li>
@@ -412,174 +579,7 @@ MethodVisitor visitMethod(int access, String name, String desc, String signature
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/03/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-深入理解插件化之Classloader类加载（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">深入理解插件化之Classloader类加载（一）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-15T04:30:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-插件化的来源"><a href="#一-插件化的来源" class="headerlink" title="一.插件化的来源"></a>一.插件化的来源</h2><p>&emsp;&emsp;<br>插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK<br>独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。</p>
-<hr>
-<h2 id="二-插件化所要解决的问题"><a href="#二-插件化所要解决的问题" class="headerlink" title="二.插件化所要解决的问题"></a>二.插件化所要解决的问题</h2><ul>
-<li>减少APP体积，随着逐渐的迭代开发APP的功能模块越来越多，apk体积会越来越大</li>
-<li>降低模块之间的耦合度</li>
-<li>应用的方法数目可能超过65535，APP占用的内存过大</li>
-</ul>
-<hr>
-<h2 id="三-插件化的开源框架"><a href="#三-插件化的开源框架" class="headerlink" title="三.插件化的开源框架"></a>三.插件化的开源框架</h2><p>目前市面上的插件化框架较多，建议根据具体项目需求选择<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JDzeusIyomjdDyQKLXLdwrvO9IzHy.tDxfg2ru1be82K.wLM9bxPSapKvauNskDRrQ!!/b&bo=jQMeAo0DHgIDCSw!&rf=viewer_4" alt="class">  </p>
-<hr>
-<h2 id="四-插件化的简单分析"><a href="#四-插件化的简单分析" class="headerlink" title="四.插件化的简单分析"></a>四.插件化的简单分析</h2><p>&emsp;&emsp;1.插件apk是没有安装的，那我们怎么加载它呢？一个apk主要就是由代码和资源组成，所以上面的问题我们可以变为：class类的插件化，资源插件化。<br><br/><br>&emsp;&emsp;2.Activity等组件是有生命周期的，它们统一由系统服务AMS管理；使用ClassLoader可以从插件中创建Activity对象，但是Activity需要管理生命周期，所以需要想办法把我们加载进来的Activity等组件交给系统管理，让AMS赋予组件生命周期。</p>
-<hr>
-<h2 id="五-插件的类加载机制Classloader"><a href="#五-插件的类加载机制Classloader" class="headerlink" title="五.插件的类加载机制Classloader"></a>五.插件的类加载机制Classloader</h2><p><br/>&emsp;&emsp;ClassLoader的实现类主要分为两种类型：系统类加载器和自定义加载器。其中系统类加载器主要包括三种：<br/></p>
-<p>类名 | 用处<br>—|—|—<br>BootClassLoader  | 用于加载Android Framework层class文件<br>PathClassLoader | 用于Android应用程序类加载器。可以加载指定的dex，以及jar、zip、apk中的classes.dex<br>DexClassLoader | 用于加载指定的dex，以及jar、zip、apk中的class<br>彼此间的继承关系如下图：<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"><br><br/>2.具体分析<br><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。<br><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：<br>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器<br><br/>3.双亲委托机制<br><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。<br><br/>具体源码分析如下：</p>
-<pre><code>// /libcore/ojluni/src/main/java/java/lang/ClassLoader.java 
-protected Class&lt;?&gt; loadClass(String name, boolean resolve) 
-    throws ClassNotFoundException{ 
-    // 检测这个类是否已经被加载 --&gt; 1 Class&lt;?&gt; c = findLoadedClass(name); 
-    if (c == null) { 
-        try {
-            if (parent != null) { 
-            //如果parent不为null，则调用parent的loadClass进行加载 
-            c = parent.loadClass(name, false); 
-        } else { 
-            // 正常情况下不会走这儿，因为 BootClassLoader 重写了 loadClass 方法，结束了递归 
-            c=findBootstrapClassOrNull(name);
-            } 
-        } 
-        catch (ClassNotFoundException e) { }
-        if (c == null) { 
-        // 如果仍然找不到，就调用 findClass 去查找 --&gt; 2 
-        c = findClass(name); 
-        }
-    }
-    return c; 
-}
-// --&gt;1 检测这个类是否已经被加载 
-protected final Class&lt;?&gt; findLoadedClass(String name) { 
-    ClassLoader loader; 
-    if (this == BootClassLoader.getInstance()) 
-        loader = null; 
-    else
-        loader = this; 
-    // 最后通过 native 方法实现查找 
-    return VMClassLoader.findLoadedClass(loader, name); 
-}
-// --&gt;2 加载器一般都会重写这个方法，定义自己的加载规则 
-protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException { 
-    throw new ClassNotFoundException(name); 
-}
-// /libcore/libart/src/main/java/java/lang/VMClassLoader.java native static Class findLoadedClass(ClassLoader cl, String nam</code></pre><p><br/>4.class类的加载流程图<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JClRCkHsOaS3XHWEGjmbPDQQqhdl4emB3kO0SFJYkZ0787Z70tPnVIQnOjo*L*229Q!!/b&bo=XwU4BAAAAAADB0Q!&rf=viewer_4" alt="class"></p>
-<hr>
-<h2 id="六-具体实现代码以及流程图"><a href="#六-具体实现代码以及流程图" class="headerlink" title="六.具体实现代码以及流程图"></a>六.具体实现代码以及流程图</h2><p><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4" alt="class"></p>
-<pre><code>public static void loadClass(Context context) { 
-    try {
-        // 获取 pathList 的字段 
-        Class baseDexClassLoaderClass = Class.forName(&quot;dalvik.system.BaseDexClassLoader&quot;); 
-        Field pathListField = baseDexClassLoaderClass.getDeclaredField(&quot;pathList&quot;); pathListField.setAccessible(true); 
-
-        // 获取 dexElements 字段
-        class&lt;?&gt; dexPathListClass = Class.forName(&quot;dalvik.system.DexPathList&quot;); Field dexElementsField = dexPathListClass.getDeclaredField(&quot;dexElements&quot;); dexElementsField.setAccessible(true) 
-
-        //获取插件的 dexElements[] 
-        //获取 DexClassLoader 类中的属性 pathList 的值
-        DexClassLoader dexClassLoader = new DexClassLoader(apkPath, context.getCacheDir().getAbsolutePath(), null, context.getClassLoader()); 
-        Object pluginPathList = pathListField.get(dexClassLoader); 
-
-        // 获取 pathList 中的属性 dexElements[] 的值--- 插件的 dexElements[] 
-        Object[] pluginDexElements = (Object[]) dexElementsField.get(pluginPathList);
-
-        //获取宿主的 dexElements[] 
-        // 获取 PathClassLoader 类中的属性 pathList 的值
-        PathClassLoader pathClassLoader = (PathClassLoader) context.getClassLoader(); 
-        Object hostPathList = pathListField.get(pathClassLoader); 
-
-        // 获取 pathList 中的属性 dexElements[] 的值--- 宿主的 dexElements[] 
-        Object[] hostDexElements = (Object[]) dexElementsField.get(hostPathList); 
-
-        // 将插件的 dexElements[] 和宿主的 dexElements[] 合并为一个新的 dexElements[]
-        // 创建一个新的空数组，第一个参数是数组的类型，第二个参数是数组的长度 
-        Object[] dexElements = (Object[]) Array.newInstance( hostDexElements.getClass().getComponentType(), pluginDexElements.length + hostDexElements.length); 
-        // 将插件和宿主的 dexElements[] 的值放入新的数组中 
-        System.arraycopy(hostDexElements, 0, dexElements,0, hostDexElements.length); System.arraycopy(pluginDexElements, 0, dexElements,hostDexElements.length, pluginDexElements.length); 
-        // 将生成的新值赋给 &quot;dexElements&quot; 属性 
-        hostDexElementsField.set(hostPathList, dexElements); 
-    } catch (Exception e) { 
-        e.printStackTrace(); 
-    }
-}</code></pre><hr>
-<h2 id="六-小结"><a href="#六-小结" class="headerlink" title="六.小结"></a>六.小结</h2><p><br/>&emsp;&emsp;至此，插件化的Class加载机制分析完毕，后续会针对资源插件化和activity插件化写文章</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Classloader</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">展开全文 >></a>
         </p>
       
 
