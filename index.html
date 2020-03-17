@@ -135,6 +135,115 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-深入理解插件化之四大组件activity的加载（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">深入理解插件化之四大组件activity的加载（二）</a>
+    </h1>
+  
+
+        
+        <a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;<br>上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍</p>
+<hr>
+<h2 id="二-activity的启动流程"><a href="#二-activity的启动流程" class="headerlink" title="二.activity的启动流程"></a>二.activity的启动流程</h2><ul>
+<li>1.Context在调用startActivity后，实际上是ContextImpl的startActivity</li>
+<li>2.内部会通过Instrumentation来尝试启动Activity</li>
+<li>3.调用ams的startActivity方法，实现跨进程通信</li>
+<li>4.ams校验完activity的合法性，通过ApplicationThread回调到我们的进程</li>
+<li>5.applicationThread就是一个binder，回调逻辑是在binder线程池中完成的，所以需要通过Handler将其切换到ui线程</li>
+<li>6.发送消息LAUNCH_ACTIVITY，它对应handleLaunchActivity，在此方法中完成Activity的创建和启动</li>
+</ul>
+<hr>
+<h2 id="三-加载插件activity的实现思路"><a href="#三-加载插件activity的实现思路" class="headerlink" title="三.加载插件activity的实现思路"></a>三.加载插件activity的实现思路</h2><p>&emsp;&emsp;首先我们在宿主里面创建一个 ProxyActivity 继承自 Activity，并且在清单中注册。当启动插件Activity 的时候，在系统检测前，找到一个Hook点，然后通过 Hook 将插件 Activity 替换成 ProxyActivity，等到检测完了后，再找一个Hook点，使用 Hook 将它们换回来，这样就实现了插件 Activity的加载。</p>
+<h4 id="8-0的第一个hook点"><a href="#8-0的第一个hook点" class="headerlink" title="8.0的第一个hook点"></a>8.0的第一个hook点</h4><p>&emsp;&emsp;在Android8.0的源码中IActivityManager借助了Singleton类实现单例，而且该单例是静态的，因此IActivityManager是一个比较好的Hook点。</p>
+<ul>
+<li>定义替换IActivityManager的代理类IActivityManagerProxy，由于Hook点IActivityManager是一个接口，建议这里采用动态代理<ul>
+<li>1.拦截startActivity方法，获取参数args中保存的Intent对象，它是原本要启动插件TargetActivity的Intent</li>
+<li>2.新建一个subIntent用来启动StubActivity，并将前面得到的TargetActivity的Intent保存到subIntent中，便于以后还原TargetActivity</li>
+<li>3.最后，将subIntent赋值给参数args，这样启动的目标就变为了StubActivity，用来通过AMS的校验</li>
+</ul>
+</li>
+<li>然后，用代理类IActivityManagerProxy来替换IActivityManager<ul>
+<li>1.使用反射获取ActivityManager的IActivityManagerSingleton字段</li>
+<li>2.通过反射获取对应的Singleton实例，从上面得到的2个字段中拿到对应的IActivityManager</li>
+<li>3.最后，使用Proxy.newProxyInstance()方法动态创建代理类IActivityManagerProxy，用IActivityManagerProxy来替换IActivityManager<br><br/><img src="https://i.ibb.co/WymD7wm/8-0-hook.jpg" alt="class">  <h4 id="8-0的第二个hook点，还原插件的activity"><a href="#8-0的第二个hook点，还原插件的activity" class="headerlink" title="8.0的第二个hook点，还原插件的activity"></a>8.0的第二个hook点，还原插件的activity</h4></li>
+</ul>
+</li>
+</ul>
+<p>&emsp;&emsp;1.前面用占坑Activity通过了AMS的校验，但是我们要启动的是插件TargetActivity，还需要用插件TargetActivity来替换占坑的SubActivity，替换时机为图中步骤2之后</p>
+<p>&emsp;&emsp;2.在ActivityThread的H类中重写的handleMessage方法会对LAUNCH_ACTIVITY类型的消息进行处<br>理，最终会调用Activity的onCreate方法。在Handler的dispatchMessage处理消息的这个方法<br>中，看到如果Handelr的Callback类型的mCallBack不为null，就会执行mCallback的<br>handleMessage方法，因此mCallback可以作为Hook点。我们可以用自定义的Callback来替换<br>mCallback</p>
+<p>&emsp;&emsp;自定义的Callback实现了Handler.Callback，并重写了handleMessage方法，当收到消息的类型为<br>LAUNCH_ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射<br>将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext<br>方法中进行hook即可</p>
+<hr>
+<h2 id="三-小结"><a href="#三-小结" class="headerlink" title="三.小结"></a>三.小结</h2><p>&emsp;&emsp;本篇文章只针对插件activity的加载做了分析，源码基于8.0。插件activity的加载应该还有生命周期的管理方面，暂不赘述</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-深入理解插件化之Classloader类加载（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -725,6 +834,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
               </li>
             
             <div class="clearfix"></div>
