@@ -20,7 +20,7 @@
 <meta property="og:image" content="https://s.changjinglu.net/uploads/b5e32a5ae3badce8f878bfa2a953c740.jpeg">
 <meta property="og:image" content="https://s.changjinglu.net/uploads/d427ca57383d9c5422a26d8b114d9162.jpeg">
 <meta property="article:published_time" content="2020-01-13T13:29:22.000Z">
-<meta property="article:modified_time" content="2020-03-17T01:35:54.114Z">
+<meta property="article:modified_time" content="2020-03-17T15:45:13.736Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="无痕埋点">
 <meta property="article:tag" content="ASM">
@@ -175,6 +175,7 @@
 <li>动态代理</li>
 </ul>
 <p>&emsp;&emsp;就是要找到那个被点击的View的点击处理逻辑，然后利用截取view.onclicklistener或者window.callback，对原处理逻辑进行“拦截”</p>
+<a id="more"></a>
 <p>经过各个方案demo的测试，各方案缺点如下：<br><br/>&emsp;&emsp;动态代理缺点<br><br/>&emsp;&emsp;1.部分方案由于使用反射，效率比较低，对 App 的整体性能有一定的影响，也可能会引入兼容性方面的风险<br><br/>&emsp;&emsp;2.Application.ActivityLifecycleCallbacks 要求 API 14+，View.hasOnClickListeners() 要求 API 15+， removeOnGlobalLayoutListener 要求 API 16+<br><br/>&emsp;&emsp;3.无法直接支持采集游离于 Activity 之上的 View 的点击，比如 Dialog、PopupWindow ……</p>
 <p><br/>&emsp;&emsp;静态代理缺点<br><br/>&emsp;&emsp;1.aspectJ不支持lambda表达式<br><br/>&emsp;&emsp;2.aspectJ会和gradle4.x有兼容问题</p>
 <p>总结：针对一般手机中最好的方案：<br><br/>&emsp;&emsp;ASM &gt; aspectJ &gt; view.onclicklistener = window.callback<br><br/>&emsp;&emsp;ASM插桩的方案，目前并没有什么缺陷，在demo中适用于lambda表达式，但是集成至项目中和lambda表达式不兼容，此问题已同步至“无痕埋点”作者，后续可解决。</p>
@@ -616,11 +617,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
               </li>
             
             <div class="clearfix"></div>
