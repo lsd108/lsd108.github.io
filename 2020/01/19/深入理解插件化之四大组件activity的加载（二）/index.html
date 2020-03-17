@@ -16,7 +16,7 @@
 <meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍  二.activity的启动流程 1.Context在调用startActivity后，实际上是ContextImpl的startActivity 2.内部会通过Instrumentation来尝试启动Activity 3.调用ams的star">
 <meta property="og:image" content="https://i.ibb.co/WymD7wm/8-0-hook.jpg">
 <meta property="article:published_time" content="2020-01-19T07:30:29.000Z">
-<meta property="article:modified_time" content="2020-03-17T16:16:43.051Z">
+<meta property="article:modified_time" content="2020-03-17T16:17:59.695Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="插件化">
 <meta property="article:tag" content="activity启动流程">
@@ -191,7 +191,9 @@
 </ul>
 <p>&emsp;&emsp;1.前面用占坑Activity通过了AMS的校验，但是我们要启动的是插件TargetActivity，还需要用插件TargetActivity来替换占坑的SubActivity，替换时机为图中步骤2之后</p>
 <p>&emsp;&emsp;2.在ActivityThread的H类中重写的handleMessage方法会对LAUNCH_ACTIVITY类型的消息进行处理，最终会调用Activity的onCreate方法。在Handler的dispatchMessage处理消息的这个方法中，看到如果Handelr的Callback类型的mCallBack不为null，就会执行mCallback的handleMessage方法，因此mCallback可以作为Hook点。我们可以用自定义的Callback来替换<br>mCallback</p>
-<h2 id="emsp-emsp-自定义的Callback实现了Handler-Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH-ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可"><a href="#emsp-emsp-自定义的Callback实现了Handler-Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH-ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可" class="headerlink" title="&emsp;&emsp;自定义的Callback实现了Handler.Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH_ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可"></a>&emsp;&emsp;自定义的Callback实现了Handler.Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH_ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可</h2><h2 id="三-小结"><a href="#三-小结" class="headerlink" title="三.小结"></a>三.小结</h2><p>&emsp;&emsp;本篇文章只针对插件activity的加载做了分析，源码基于8.0。插件activity的加载应该还有生命周期的管理方面，暂不赘述</p>
+<p>&emsp;&emsp;自定义的Callback实现了Handler.Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH_ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可</p>
+<hr>
+<h2 id="三-小结"><a href="#三-小结" class="headerlink" title="三.小结"></a>三.小结</h2><p>&emsp;&emsp;本篇文章只针对插件activity的加载做了分析，源码基于8.0。插件activity的加载应该还有生命周期的管理方面，暂不赘述</p>
 
       
 
