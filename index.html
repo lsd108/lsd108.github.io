@@ -164,7 +164,62 @@
 <h2 id="四-插件化的简单分析"><a href="#四-插件化的简单分析" class="headerlink" title="四.插件化的简单分析"></a>四.插件化的简单分析</h2><p>&emsp;&emsp;1.插件apk是没有安装的，那我们怎么加载它呢？一个apk主要就是由代码和资源组成，所以上面的问题我们可以变为：class类的插件化，资源插件化。<br><br/><br>&emsp;&emsp;2.Activity等组件是有生命周期的，它们统一由系统服务AMS管理；使用ClassLoader可以从插件中创建Activity对象，但是Activity需要管理生命周期，所以需要想办法把我们加载进来的Activity等组件交给系统管理，让AMS赋予组件生命周期。</p>
 <hr>
 <h2 id="五-插件的类加载机制Classloader"><a href="#五-插件的类加载机制Classloader" class="headerlink" title="五.插件的类加载机制Classloader"></a>五.插件的类加载机制Classloader</h2><p><br/>&emsp;&emsp;ClassLoader的实现类主要分为两种类型：系统类加载器和自定义加载器。其中系统类加载器主要包括三种：<br/></p>
-<p>类名 | 用处<br>—|—|—<br>BootClassLoader  | 用于加载Android Framework层class文件<br>PathClassLoader | 用于Android应用程序类加载器。可以加载指定的dex，以及jar、zip、apk中的classes.dex<br>DexClassLoader | 用于加载指定的dex，以及jar、zip、apk中的class<br>彼此间的继承关系如下图：<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"><br><br/>2.具体分析<br><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。<br><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：<br>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器<br><br/>3.双亲委托机制<br><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。<br><br/>具体源码分析如下：</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>用处</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BootClassLoader</td>
+<td>用于加载Android Framework层class文件</td>
+</tr>
+<tr>
+<td>PathClassLoader</td>
+<td>用于Android应用程序类加载器。可以加载指定的dex，以及jar、zip、apk中的classes.dex</td>
+</tr>
+<tr>
+<td>DexClassLoader</td>
+<td>用于加载指定的dex，以及jar、zip、apk中的class</td>
+</tr>
+<tr>
+<td>彼此间的继承关系如下图：</td>
+<td></td>
+</tr>
+<tr>
+<td><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"></td>
+<td></td>
+</tr>
+<tr>
+<td><br/>2.具体分析</td>
+<td></td>
+</tr>
+<tr>
+<td><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。</td>
+<td></td>
+</tr>
+<tr>
+<td><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：</td>
+<td></td>
+</tr>
+<tr>
+<td>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器</td>
+<td></td>
+</tr>
+<tr>
+<td><br/>3.双亲委托机制</td>
+<td></td>
+</tr>
+<tr>
+<td><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。</td>
+<td></td>
+</tr>
+<tr>
+<td><br/>具体源码分析如下：</td>
+<td></td>
+</tr>
+</tbody></table>
 <pre><code>// /libcore/ojluni/src/main/java/java/lang/ClassLoader.java 
 protected Class&lt;?&gt; loadClass(String name, boolean resolve) 
     throws ClassNotFoundException{ 
