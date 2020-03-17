@@ -183,43 +183,8 @@
 <td>DexClassLoader</td>
 <td>用于加载指定的dex，以及jar、zip、apk中的class</td>
 </tr>
-<tr>
-<td>彼此间的继承关系如下图：</td>
-<td></td>
-</tr>
-<tr>
-<td><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"></td>
-<td></td>
-</tr>
-<tr>
-<td><br/>2.具体分析</td>
-<td></td>
-</tr>
-<tr>
-<td><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。</td>
-<td></td>
-</tr>
-<tr>
-<td><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：</td>
-<td></td>
-</tr>
-<tr>
-<td>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器</td>
-<td></td>
-</tr>
-<tr>
-<td><br/>3.双亲委托机制</td>
-<td></td>
-</tr>
-<tr>
-<td><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。</td>
-<td></td>
-</tr>
-<tr>
-<td><br/>具体源码分析如下：</td>
-<td></td>
-</tr>
 </tbody></table>
+<p><br/>彼此间的继承关系如下图：<br><br/><img src="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JHiMQd4LeWJG3CkDbwLoJaRkbM*ivznkkwUR83HHIaO5bVHIOQF.xHNpdKwsHzgxug!!/mnull&bo=OwIyAQAAAAADByg!&rf=photolist&t=5" alt="class"><br><br/>2.具体分析<br><br/>&emsp;&emsp;PathClassLoader 和 DexClassLoader 都是继承自 BaseDexClassLoader，并且类中只有构造方法，它们的类加载逻辑完全写在 BaseDexClassLoader 中。其中我们值的注意的是，在8.0之前，它们二者的唯一区别是第二个参数optimizedDirectory，这个参数的意思是生成的odex（优化的dex）存放的路径，PathClassLoader直接为null，而DexClassLoader是使用用户传进来的路径，而在8.0之后，二者完全相同。<br><br/>&emsp;&emsp;BootClassLoader 和 PathClassLoader之间的关系：<br>应用程序类是由 PathClassLoader加载的，安卓sdk中的类是 BootClassLoader加载的，而BootClassLoader是其parent类加载器<br><br/>3.双亲委托机制<br><br/>&emsp;&emsp;首先检测这个类是否已经被加载了，如果已经加载了，直接获取并返回。如果没有被加载，parent不为null，则调用parent的loadClass进行加载，依次递 归，如果找到了或者加载了就返回，如果即没找到也加载不了，才自己去加载。这个过程就是我们常说的双亲委托机制。<br><br/>具体源码分析如下：</p>
 <pre><code>// /libcore/ojluni/src/main/java/java/lang/ClassLoader.java 
 protected Class&lt;?&gt; loadClass(String name, boolean resolve) 
     throws ClassNotFoundException{ 
