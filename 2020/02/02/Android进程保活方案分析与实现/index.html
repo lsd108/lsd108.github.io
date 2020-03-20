@@ -6,14 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives: 2020/1 | Lsd&#39;s blog</title>
+  <title>Android进程保活方案分析与实现 | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/archives/2020/01/index.html">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;笔者上家公司是一个集C端和B端一体的线下传媒公司，它的主打产品是一台集成了安卓开发板和led屏的智能终端互动设备。所以它会要求应常驻前台，这就涉及到进程保活的知识，本篇文章将带着大家了解安卓中的各类进程以及部分保活方法。  二.进程的优先级&amp;emsp;&amp;emsp;网上的各类博文将进程根据优先级划分为五级：   1、前台进程（Foreground process）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android进程保活方案分析与实现">
+<meta property="og:url" content="http://yoursite.com/2020/02/02/Android%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%B4%BB%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90%E4%B8%8E%E5%AE%9E%E7%8E%B0/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;笔者上家公司是一个集C端和B端一体的线下传媒公司，它的主打产品是一台集成了安卓开发板和led屏的智能终端互动设备。所以它会要求应常驻前台，这就涉及到进程保活的知识，本篇文章将带着大家了解安卓中的各类进程以及部分保活方法。  二.进程的优先级&amp;emsp;&amp;emsp;网上的各类博文将进程根据优先级划分为五级：   1、前台进程（Foreground process）">
+<meta property="og:image" content="https://i.ibb.co/3f5q0jv/image.jpg">
+<meta property="og:image" content="https://i.ibb.co/tcdjNcc/adj.png">
+<meta property="article:published_time" content="2020-02-02T10:30:56.000Z">
+<meta property="article:modified_time" content="2020-03-20T17:07:08.924Z">
 <meta property="article:author" content="李思达">
+<meta property="article:tag" content="进程保活">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.ibb.co/3f5q0jv/image.jpg">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -133,190 +141,276 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android进程保活方案分析与实现" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android进程保活方案分析与实现
+    </h1>
+  
+
+        
+        <a href="/2020/02/02/Android%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%B4%BB%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90%E4%B8%8E%E5%AE%9E%E7%8E%B0/" class="archive-article-date">
+  	<time datetime="2020-02-02T10:30:56.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-02</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者上家公司是一个集C端和B端一体的线下传媒公司，它的主打产品是一台集成了安卓开发板和led屏的智能终端互动设备。所以它会要求应常驻前台，这就涉及到进程保活的知识，本篇文章将带着大家了解安卓中的各类进程以及部分保活方法。</p>
+<hr>
+<h2 id="二-进程的优先级"><a href="#二-进程的优先级" class="headerlink" title="二.进程的优先级"></a>二.进程的优先级</h2><p>&emsp;&emsp;网上的各类博文将进程根据优先级划分为五级： </p>
+<ul>
+<li>1、前台进程（Foreground process） </li>
+<li>2、可见进程（Visible process） </li>
+<li>3、服务进程（Service process）   </li>
+<li>4、后台进程（Background process）</li>
+<li>5、空进程（Empty process）</li>
+</ul>
+<a id="more"></a>
+<p>&emsp;&emsp;但是官方文档中，将后台进程和空进程统称为缓存进程，详细的区分此处不做赘述，具体可以参考官方文档的介绍<br><a href="https://developer.android.com/guide/components/activities/process-lifecycle?hl=zh-cn" target="_blank" rel="noopener">https://developer.android.com/guide/components/activities/process-lifecycle?hl=zh-cn</a><br><br>&emsp;&emsp;那么我们在这问一个问题一个进程何时被杀死？这里引入一个内存阈值的概念，内存阈值在不同的手机上不一样，一旦低于该值，android就会杀死对应优先级的进程。例如我们打开控制台，在命令行模式下输入/sys/module/lowmemorykiller/parameters/minfree，获得当前进程保存着的对应内存阀值，以下的六个值指的是一个进程还剩多少内存<br><br/><img src="https://i.ibb.co/3f5q0jv/image.jpg" alt="class"> </p>
+<hr>
+<h2 id="二-android进程的回收策略"><a href="#二-android进程的回收策略" class="headerlink" title="二.android进程的回收策略"></a>二.android进程的回收策略</h2><p>&emsp;&emsp;android系统处于用户体验和性能上的双方面考虑，在app退到后台时系统并不会真正kill此进程，而是将其缓存起来，所以随着打开的应用越多，后台缓存的进程也越多。当系统内存不足的情况下，系统会开始根据 OOM_ADJ 阈值级别触发相应力度的内存回收的机制，来判断需要kill掉哪些进程，然后腾出内存给需要的app,这套进程回收机制就叫做Low Memory Killer.<br><br>&emsp;&emsp;这里再问一个问题，如何判断进程的优先级？我们打开控制台，在命令模式下输入cat /proc/进程id/oom_adj获取该进程的优先级<br><br/><img src="https://i.ibb.co/tcdjNcc/adj.png" alt="class"><br><br>&emsp;&emsp;这里我们注意一下几点：</p>
+<ul>
+<li>1.adj值越小优先级越高，注意应用进程一般在0-3就认为app很安全</li>
+<li>2.前台进程adj为0，app退到后台后，adj变为11（不同厂商，adj值会不同）</li>
+<li>3.Android N的ADJ还是个位数，现在都基本乘100了<br><br>然后关于adj值得查询对应表可参照下表</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>ADJ级别</th>
+<th>取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NATIVE_ADJ</td>
+<td>-1000</td>
+<td>native进程</td>
+</tr>
+<tr>
+<td>SYSTEM_ADJ</td>
+<td>-900</td>
+<td>仅指system_server进程</td>
+</tr>
+<tr>
+<td>PERSISTENT_PROC_ADJ</td>
+<td>-800</td>
+<td>系统persistent进程</td>
+</tr>
+<tr>
+<td>PERSISTENT_SERVICE_ADJ</td>
+<td>-700</td>
+<td>关联着系统或persistent进程</td>
+</tr>
+<tr>
+<td>FOREGROUND_APP_ADJ</td>
+<td>0</td>
+<td>前台进程</td>
+</tr>
+<tr>
+<td>VISIBLE_APP_ADJ</td>
+<td>100</td>
+<td>可见进程</td>
+</tr>
+<tr>
+<td>PERCEPTIBLE_APP_ADJ</td>
+<td>200</td>
+<td>可感知进程，比如后台音乐播放</td>
+</tr>
+<tr>
+<td>BACKUP_APP_ADJ</td>
+<td>300</td>
+<td>备份进程</td>
+</tr>
+<tr>
+<td>HEAVY_WEIGHT_APP_ADJ</td>
+<td>400</td>
+<td>重量级进程</td>
+</tr>
+<tr>
+<td>SERVICE_ADJ</td>
+<td>500</td>
+<td>服务进程</td>
+</tr>
+<tr>
+<td>HOME_APP_ADJ</td>
+<td>600</td>
+<td>Home进程</td>
+</tr>
+<tr>
+<td>PREVIOUS_APP_ADJ</td>
+<td>700</td>
+<td>上一个进程</td>
+</tr>
+<tr>
+<td>SERVICE_B_ADJ</td>
+<td>800</td>
+<td>B List中的Service</td>
+</tr>
+<tr>
+<td>CACHED_APP_MIN_ADJ</td>
+<td>900</td>
+<td>不可见进程的adj最小值</td>
+</tr>
+<tr>
+<td>CACHED_APP_MAX_ADJ</td>
+<td>906</td>
+<td>不可见进程的adj最大值</td>
+</tr>
+</tbody></table>
+<p>&emsp;&emsp;从AndroidN开始，ADJ采用100、200、300；在此之前的版本ADJ采用数字1、2、3，这样的调整可以细化进程的优先级</p>
+<hr>
+<h2 id="三-进程保活方案"><a href="#三-进程保活方案" class="headerlink" title="三.进程保活方案"></a>三.进程保活方案</h2><p>&emsp;&emsp;为了减少进程被杀的概率，我们需要想办法提高进程的优先级,接下来我为大家介绍几种方案</p>
+<ul>
+<li>一像素保活法<ul>
+<li>方案原理：通过监听手机锁屏和解锁广播，在关屏的时候开启一像素activity，让应用成为前台进程;在开屏的时候，关闭一像素activity</li>
+<li>主要代码：</li>
+</ul>
+</li>
+</ul>
+<pre><code>//主activity中
+Window wd = getWindow();
+//将activity放在屏幕左上角
+wd.setGravity(Gravity.START | Gravity.TOP);
+WindowManager.LayoutParams layoutParams = wd.getAttributes();
+//设置宽高为1个像素
+layoutParams.width = 1;
+layoutParams.height = 1;
+layoutParams.x = 0;
+layoutParams.y = 0;
+window.setAttributes(layoutParams);
+
+//监听服务中
+final ScreenManager manager = ScreenManager.getInstance(OneKeepService.this);
+ScreenBroadcastListener listener = new ScreenBroadcastListener(this);
+listener.registerListener(new ScreenBroadcastListener.ScreenStateListener() {
+    @Override
+    public void onScreenOn() {
+        manager.finishKeepActivity();
+    }
+    @Override
+    public void onScreenOff() {
+        manager.startKeepActivity();
+    }
+});</code></pre><ul>
+<li>Notification通知栏提升进程优先级<ul>
+<li>方案原理：<ul>
+<li>4.3之前，new一个空的Notification让通知栏不会显示我们发送的Notification</li>
+<li>4.3-7.0，在已有的Service中，实现一个内部Service，同时发送具有相同id的Notification通知栏，然后将内部Service结束掉，同时也将Notification关闭，随着Notification的消失，同时也会将将系统优先级提升。</li>
+<li>但是我们需要注意的是，google在7.0之后不允许开启两个id相同的进程，所以此方案只适用于7.0之前。</li>
+</ul>
+</li>
+<li>主要代码：</li>
+</ul>
+</li>
+</ul>
+<pre><code>//主service
+@Override
+public void onCreate() {
+    super.onCreate();
+    if (Build.VERSION.SDK_INT &lt;Build.VERSION_CODES.JELLY_BEAN_MR2) {
+        startForeground(NOTIFICATION_ID, new Notification());
+    } else {
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        startForeground(NOTIFICATION_ID, builder.build());
+        //启动内部service
+        startService(new Intent(this,InternalService.class));
+    }
+}
+//内部service
+@Override
+public void onCreate() {
+    super.onCreate();
+    //发送与主service中相同id的Notification
+    Notification.Builder builder = new Notification.Builder(this);
+    builder.setSmallIcon(R.mipmap.ic_launcher);
+    startForeground(NOTIFICATION_ID, builder.build());
+    new Handler().postDelayed(new Runnable() {
+        @Override
+        public void run() {
+            stopForeground(true);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+           notificationManager.cancel(NOTIFICATION_ID);
+                stopSelf();
+        }
+    },100);
+}    </code></pre><hr>
+<h2 id="四-小结"><a href="#四-小结" class="headerlink" title="四.小结"></a>四.小结</h2><p>&emsp;&emsp;本篇博文为大家介绍了两种进程保活的方案，后续会针对拉活给大家讲解一下这种“流氓”操作，若文中有不严谨之处，还请大家多多指正。<br><br>本文参考文献：<br><br><a href="https://www.jianshu.com/p/4ee14aa23f07" target="_blank" rel="noopener">https://www.jianshu.com/p/4ee14aa23f07</a><br><br><a href="https://www.jianshu.com/p/94d1cd553c44" target="_blank" rel="noopener">https://www.jianshu.com/p/94d1cd553c44</a></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-27T10:39:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-27</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/">深入理解插件化之资源的加载（三）</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">AssetManager</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">进程保活</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">深入理解插件化之资源的加载（三）</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">深入理解插件化之四大组件activity的加载（二）</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-15T04:30:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-15</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">深入理解插件化之Classloader类加载（一）</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Classloader</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">无痕埋点</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ASM</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
   
-  
-    </div></section>
-  
-
-    
 
 
           </div>
@@ -339,8 +433,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: true,
