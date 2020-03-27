@@ -6,20 +6,21 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>深入理解插件化之资源的加载（三） | Lsd&#39;s blog</title>
+  <title>Handler源码分析 | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;前两篇博文针对插件化的classLoader类加载机制和activty加载进行了分析，但是在安卓中还有一个重要点——资源插件化。在我们的项目中，一般通过Resources去访问res中的资源，使用AssetManager访问assets中的资源，具体如何实现我们来一起分析  二.具体的源码分析Drawable drawable &#x3D; resources.getDraw">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程&#x3D; 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handle">
 <meta property="og:type" content="article">
-<meta property="og:title" content="深入理解插件化之资源的加载（三）">
-<meta property="og:url" content="http://yoursite.com/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/index.html">
+<meta property="og:title" content="Handler源码分析">
+<meta property="og:url" content="http://yoursite.com/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;前两篇博文针对插件化的classLoader类加载机制和activty加载进行了分析，但是在安卓中还有一个重要点——资源插件化。在我们的项目中，一般通过Resources去访问res中的资源，使用AssetManager访问assets中的资源，具体如何实现我们来一起分析  二.具体的源码分析Drawable drawable &#x3D; resources.getDraw">
-<meta property="article:published_time" content="2020-01-27T10:39:29.000Z">
-<meta property="article:modified_time" content="2020-03-18T09:19:50.889Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程&#x3D; 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handle">
+<meta property="og:image" content="https://i.ibb.co/qC469Lg/handler.png">
+<meta property="article:published_time" content="2020-02-07T11:40:29.000Z">
+<meta property="article:modified_time" content="2020-03-27T15:48:10.411Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="插件化">
-<meta property="article:tag" content="AssetManager">
+<meta property="article:tag" content="Handler">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.ibb.co/qC469Lg/handler.png">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -139,149 +140,259 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-深入理解插件化之资源的加载（三）" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-Handler源码分析" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      深入理解插件化之资源的加载（三）
+      Handler源码分析
     </h1>
   
 
         
-        <a href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-27T10:39:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-27</time>
+        <a href="/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-02-07T11:40:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-07</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;前两篇博文针对插件化的classLoader类加载机制和activty加载进行了分析，但是在安卓中还有一个重要点——资源插件化。在我们的项目中，一般通过Resources去访问res中的资源，使用AssetManager访问assets中的资源，具体如何实现我们来一起分析</p>
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程= 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handler机制可以解决以上问题，今天我将带领大家看一下handler相关的源码。</p>
 <hr>
-<h2 id="二-具体的源码分析"><a href="#二-具体的源码分析" class="headerlink" title="二.具体的源码分析"></a>二.具体的源码分析</h2><pre><code>Drawable drawable = resources.getDrawable(resId);
-InputStream is = getAssets().open(&quot;plugin_icon.jpg&quot;);</code></pre><p>上面这种方式是我们平时获取resources和assets资源的使用方式。首先我们来看下Resources的源码<br>    <a id="more"></a></p>
-<pre><code>/frameworks/base/core/java/android/content/res/Resources.java
-@Deprecated
-public Resources(AssetManager assets, DisplayMetrics metrics, Configuration config) {
-    this(null);
-    mResourcesImpl = new ResourcesImpl(assets, metrics, config, new DisplayAdjustments());
-}
-@NonNull
-public CharSequence[] getTextArray(@ArrayRes int id) throws NotFoundException {
-    CharSequence[] res = mResourcesImpl.getAssets().getResourceTextArray(id);
-    if (res != null) {
-        return res;
+<h2 id="二-handler类图"><a href="#二-handler类图" class="headerlink" title="二.handler类图"></a>二.handler类图</h2><p>&emsp;&emsp;handler是一套Android消息传递机制，它主要涉及Handler、Message、MessageQueue、Looper等几个类，相关的类的方法我会在源码介绍中向大家说明</p>
+<a id="more"></a>
+<p><br>类图如下：<br><img src="https://i.ibb.co/qC469Lg/handler.png" alt="class"></p>
+<hr>
+<h2 id="三-handler的使用以及如何避免内存泄漏"><a href="#三-handler的使用以及如何避免内存泄漏" class="headerlink" title="三.handler的使用以及如何避免内存泄漏"></a>三.handler的使用以及如何避免内存泄漏</h2><p>&emsp;&emsp;使用方法很简单，我们创建了一个静态内部类的Handler实例,不会隐式持有他们外部类的引用。同时我们考虑到可能会在Handle内部调用外部Activity的方法，所以让Handler持有Activity的弱引用（WeakReference），最后我们在onDestroy()中调用removeCallback()，将handler移除，这样避免了handler使用不当而造成内存的泄漏。</p>
+<pre><code>private Handler mHandler = new MyHandler(this);
+private static class MyHandler extends Handler{
+    private final WeakReference&lt;Activity&gt; mActivity;
+    public MyHandler(Activity activity) {
+        mActivity = new WeakReference&lt;Activity&gt;(activity);
     }
-    throw new NotFoundException(&quot;Text array resource ID #0x&quot; + Integer.toHexString(id));
-}
-@NonNull
-public String[] getStringArray(@ArrayRes int id)
-        throws NotFoundException {
-    String[] res = mResourcesImpl.getAssets().getResourceStringArray(id);
-    if (res != null) {
-        return res;
-    }
-    throw new NotFoundException(&quot;String array resource ID #0x&quot; + Integer.toHexString(id));
-}</code></pre><p>截取了Resources中的两个方法和它自身的构造方法，我们发现Resources的实现类是ResourceImpl类，getAssets()返回的是AssetManager，所以我们能够理解为资源的加载是通过AssetManager来加载的。<br><br>接下来我们来看下AssetManager是如何创建处理的</p>
-<pre><code>/frameworks/base/core/java/android/content/res/AssetManager.java
-public final class AssetManager implements AutoCloseable {
-    ...
-    /**
-    * @deprecated Use {@link #setApkAssets(ApkAssets[], boolean)}
-    * @hide
-    */
-    @Deprecated
-    public int addAssetPath(String path) {
-        return addAssetPathInternal(path, false /*overlay*/, false /*appAsLib*/);
-    }
-}</code></pre><p>我们发现一个addAssetPath的方法，我们大胆猜测这个path就是apk文件的路径，但是我们还是需要验证一下，我们再看一下ResourcesManager是否会对AssetManager中的addAssetPath方法进行调用</p>
-<pre><code>/frameworks/base/core/java/android/app/ResourcesManager.java   
-@VisibleForTesting
-protected @Nullable AssetManager createAssetManager(@NonNull final ResourcesKey key) {
-    AssetManager assets = new AssetManager();
-
-    // resDir can be null if the &apos;android&apos; package is creating a new Resources object.
-    // This is fine, since each AssetManager automatically loads the &apos;android&apos; package
-    // already.
-    if (key.mResDir != null) {
-        if (assets.addAssetPath(key.mResDir) == 0) {
-            Log.e(TAG, &quot;failed to add asset path &quot; + key.mResDir);
-            return null;
+    @Override
+    public void handleMessage(Message msg) {
+        if(mActivity.get() == null) {
+            return;
+        }
+        switch (msg.what) {
+            //3.接收到消息，处理相应逻辑
+            case 1:
+                log.e(TAG,&quot;接收到&quot;+msg.obj.toString());
+                break;
         }
     }
+}
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    //1.从全局池获取msg对象
+    Message msg = Message.obtain();
+    msg.what = 1; 
+    msg.obj = &quot;test_handler&quot;; 
+    //2.发送消息
+    mHandler.sendMessage(msg);
+}
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    mHandler.removeCallback();
+}</code></pre><hr>
+<h2 id="四-handler的源码分析"><a href="#四-handler的源码分析" class="headerlink" title="四.handler的源码分析"></a>四.handler的源码分析</h2><p>&emsp;&emsp;众所周知Handler在发送消息时方式共分为2种：使用Handler.sendMessage（）、使用Handler.post（）。下面我会从使用 Handler.sendMessage（）出发，进行分析。首先我们先看Handler的构造方法</p>
+<pre><code>//Handler
+public Handler(Callback callback, boolean async) {
     ...
-}</code></pre><p>在ResourcesManager会创建一个AssetManager的对象，调用addAssetPath，传入一个apk文件路径，最终获得Resources。</p>
-<hr>
-<h2 id="三-具体的方案实现"><a href="#三-具体的方案实现" class="headerlink" title="三.具体的方案实现"></a>三.具体的方案实现</h2><p>实现思路：</p>
-<ul>
-<li>创建AssetManager对象，通过反射调用addAssetPath方法，将插件apk的路径作为参数传入</li>
-<li>将创建的 AssetManager对象作为参数，创建一个新的Resources对象，并返回给插件使用</li>
-</ul>
-<p>具体代码如下：<br>Plugin中新建一个加载资源的Uitl</p>
-<pre><code>public class LoadResourcesUtil {
-
-    private final static String apkPath = &quot;/sdcard/plugin-debug.apk&quot;;
-    private static Resources mResources;
-
-    public static Resources getResources(Context context) {
-         if (mResources == null) {
-             mResources = loadResources(context);
-        }
-         return mResources;
+    //关联当前线程的Looper对象
+    mLooper = Looper.myLooper();
+    if (mLooper == null) {
+        throw new RuntimeException(
+            &quot;Can&apos;t create handler inside thread &quot; + Thread.currentThread()
+                    + &quot; that has not called Looper.prepare()&quot;);
     }
-    public static Resources loadResources(Context context) {
+    //通过looper绑定MessageQueue
+    mQueue = mLooper.mQueue;
+    mCallback = callback;
+    mAsynchronous = async;
+}</code></pre><p>&emsp;&emsp;从以上源码可以看出，在handler的自身构造函数中，会关联当前线程的Looper对象，通过Looper对象绑定MessageQueue，那么这里问一个问题？handler是如何获取looper的呢？或者说，looper是什么时候创建的呢？接下来我们看一下looper</p>
+<pre><code>//在Looper
+//在Looper.prepare中set数据，否则sThreadLocal.get()将返回null
+static final ThreadLocal&lt;Looper&gt; sThreadLocal = new
+ThreadLocal&lt;Looper&gt;();
+
+public static void prepare() {
+    prepare(true);
+}
+private static void prepare(boolean quitAllowed) {
+    if (sThreadLocal.get() != null) {
+        throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
+    }
+    sThreadLocal.set(new Looper(quitAllowed));
+}
+//主线程（UI线程）创建时自动调用，即 主线程的Looper对象自动生成，不需手动生成
+public static void prepareMainLooper() {
+    prepare(false);
+    synchronized (Looper.class) {
+        if (sMainLooper != null) {
+            throw new IllegalStateException(&quot;The main Looper has already been prepared.&quot;);
+        }
+        sMainLooper = myLooper();
+    }
+}</code></pre><p>&emsp;&emsp;通过不同的线程访问同一个threadlocal，不管是set还是get方法，对threadlocal所做的读写操作仅限于各自线程内部，使每一个线程有单独唯一的looper。这就是handler 使用threadlocal的原因。<br><br>&emsp;&emsp;创建Looper对象主要通过Looper.prepare()和Looper.prepareMainLooper()。而prepare()是为当前子线程创建，prepareMainLooper()是为主线程创建。然后Loopery又是通过Looper.loop()将消息循环，分发消息到Handler的。<br><br>&emsp;&emsp;接下来我们看下loop()方法。</p>
+<pre><code>//此出只展示主要代码
+public static void loop() {
+    final Looper me = myLooper();
+
+    //判断Looper是否为空，为空则抛出异常
+    if (me == null) {
+        throw new RuntimeException(&quot;No Looper; Looper.prepare() wasn&apos;t called on this thread.&quot;);
+    }
+    final MessageQueue queue = me.mQueue;
+
+    //通过for循环，从queue队列中取出消息
+    ...
+    for (;;) {
+        Message msg = queue.next(); // might block
+        if (msg == null) {
+            // No message indicates that the message queue is quitting.
+            return;
+        }
+        ...
         try {
-            // 创建AssetManager
-            AssetManager assetManager = AssetManager.class.newInstance();
-            //反射调用addAssetPath
-            Method addAssetPathMethod = assetManager.getClass()
-                .getDeclaredMethod(&quot;addAssetPath&quot;, String.class);
-            addAssetPathMethod.setAccessible(true);
-            addAssetPathMethod.invoke(assetManager, apkPath);
-
-            // 创建一个新的Resources对象，并返回给插件使用
-            Resources resources = context.getResources();
-            return new Resources(assetManager, resources.getDisplayMetrics(),
-                resources.getConfiguration());
-        } catch (Exception e) {
-            e.printStackTrace();
+           //分发消息到对应的handler
+           msg.target.dispatchMessage(msg);
+            dispatchEnd = needEndTime ? SystemClock.uptimeMillis() : 0;
+        } finally {
+            if (traceTag != 0) {
+                Trace.traceEnd(traceTag);
+            }
         }
-        return null;
-   }
-}</code></pre><p>接下来我们再plugin中的MainActivity进行重写getResources方法</p>
-<pre><code>public class MainActivity extends Activity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // 会使用到资源，暂时注释
-        setContentView(R.layout.activity_main);
+        ...
+        //释放msg占有的资源
+        msg.recycleUnchecked();
+    }
+}</code></pre><p><br>&emsp;&emsp;我们发现target也就是一个hander,绕了一圈，还是通过handler将消息传递给了消息队列，然后消息队列又将消息给了handler处理。所以handler的处理实际上有两个作用：发送消息，处理消息。发送消息调用的是dispatchMessage，我们再回到Handler中看一下此方法</p>
+<pre><code>public void dispatchMessage(Message msg) {
+    //如果msg.callback不为空，则当前发送消息的方式是post（Runnable r）
+    if (msg.callback != null) {
+        handleCallback(msg);
+    } else {
+        if (mCallback != null) {
+            if (mCallback.handleMessage(msg)) {
+                return;
+            }
+        }
+        //如果msg.callback属性为空，则当前发送消息的方式是sendMessage（Message msg）
+        handleMessage(msg);
+    }
+}
+
+ private static void handleCallback(Message message) {
+    message.callback.run();
+}</code></pre><p><br>&emsp;&emsp;我们可以dispatchMessage(msg)当成一个中转站，在进行消息分发时，会判断msg.callback的属性。</p>
+<ul>
+<li>msg.callback不为空，则代表使用了post（Runnable r）发送消息，则回调Runnable对象里复写的run（）方法</li>
+<li>msg.callback为空，则代表使用了sendMessage（Message msg）发送消息，则回调复写的handleMessage(msg)方法</li>
+</ul>
+<p><br>&emsp;&emsp;我们重新回到Handler类中，看看sendMessage(Message msg)方法是如何将消息发送到消息队列的？</p>
+<pre><code>//Handler
+public final boolean sendMessage(Message msg)
+{
+    return sendMessageDelayed(msg, 0);
+}
+
+public final boolean sendMessageDelayed(Message msg, long delayMillis)
+{
+    if (delayMillis &lt; 0) {
+        delayMillis = 0;
+    }
+    return sendMessageAtTime(msg, SystemClock.uptimeMillis() + delayMillis);
+}
+
+ public boolean sendMessageAtTime(Message msg, long uptimeMillis) {
+    MessageQueue queue = mQueue;
+    if (queue == null) {
+        RuntimeException e = new RuntimeException(
+                this + &quot; sendMessageAtTime() called with no mQueue&quot;);
+        Log.w(&quot;Looper&quot;, e.getMessage(), e);
+        return false;
+    }
+    return enqueueMessage(queue, msg, uptimeMillis);
+}
+
+private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
+    msg.target = this;
+    if (mAsynchronous) {
+        msg.setAsynchronous(true);
+    }
+    return queue.enqueueMessage(msg, uptimeMillis);
+}
+
+public final boolean postAtTime(Runnable r, long uptimeMillis)
+{
+    return sendMessageAtTime(getPostMessage(r), uptimeMillis);
+}</code></pre><p><br>&emsp;&emsp;通过上述源码，我们发现sendMessage(Message msg)和post（Runnable r）都会回调sendMessageAtTime(Message msg, long uptimeMillis)，在此方法中，首先会获取消息队列的对象MessageQueue，如果queue为空，则返回false,表明没有将消息添加至消息队列。<br><br>&emsp;&emsp;最后我们看看最终都会调用的enqueueMessage(queue, msg, uptimeMillis)方法</p>
+<pre><code>//MessageQueue
+boolean enqueueMessage(Message msg, long when) {
+    //1.判断msg.target是否为空，也就是当前的handler是否为空，为空则抛出异常
+    if (msg.target == null) {
+        throw new IllegalArgumentException(&quot;Message must have a target.&quot;);
+    }
+    //2.判断当前的msg已被使用，如果已被使用，抛出异常
+    if (msg.isInUse()) {
+        throw new IllegalStateException(msg + &quot; This message is already in use.&quot;);
     }
 
-    @Override
-    public Resources getResources() {
-         Resources resources = LoadUtil.getResources(getApplication());
-         return resources == null ? super.getResources() : resources;
-    }
-}</code></pre><p>最后我们在宿主的application中进行修改</p>
-<pre><code>public class MyApplication extends Application {
+    synchronized (this) {
+        //3.判断当前线程是否处于退出状态
+        if (mQuitting) {
+            IllegalStateException e = new IllegalStateException(
+                    msg.target + &quot; sending message to a Handler on a dead thread&quot;);
+            Log.w(TAG, e.getMessage(), e);
+            msg.recycle();
+            return false;
+        }
 
-    private Resources resources;
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        resources = LoadUtil.loadResources(this);
-    }
+        msg.markInUse();
+        msg.when = when;
+        Message p = mMessages;
+        boolean needWake;
+        //判断消息队列中是否有消息
+        if (p == null || when == 0 || when &lt; p.when) {
+            // New head, wake up the event queue if blocked.
+            msg.next = p;
+            mMessages = msg;
+            needWake = mBlocked;
+        } else {
 
-    @Override
-    public Resources getResources() {   
-        return resources == null ? super.getResources() : resources;
+            needWake = mBlocked &amp;&amp; p.target == null &amp;&amp; msg.isAsynchronous();
+            Message prev;
+            //队列中有消息，循环将message根据创建的时间插入到队列
+            for (;;) {
+                prev = p;
+                p = p.next;
+                if (p == null || when &lt; p.when) {
+                    break;
+                }
+                if (needWake &amp;&amp; p.isAsynchronous()) {
+                    needWake = false;
+                }
+            }
+            msg.next = p; // invariant: p == prev.next
+            prev.next = msg;
+        }
+
+        // We can assume mPtr != 0 because mQuitting is false.
+        if (needWake) {
+            nativeWake(mPtr);
+        }
     }
-}</code></pre><p>这样插件在获取资源时，使用的就是在宿主中新创建的resources对象，也就可以拿到相应的资源了</p>
+    return true;
+}</code></pre><p><br>&emsp;&emsp;相应的步骤已在源码中进行分析。在此之后，随着Looper对象的无限消息循环，会不断从消息队列中取出Handler发送的消息并分发到对应Handler，最后回调Handler.handleMessage()处理消息。</p>
 <hr>
-<h2 id="四-小结"><a href="#四-小结" class="headerlink" title="四.小结"></a>四.小结</h2><p>&emsp;&emsp;以上就是插件化资源加载的大概流程分析，或许还是会有很多语意不清的地方，希望大家更正。我们会发现原理分析看源码是一个很重要的过程，最后推荐一个看在线观看安卓源码的网址<a href="https://www.androidos.net.cn/sourcecode" target="_blank" rel="noopener">https://www.androidos.net.cn/sourcecode</a></p>
+<h2 id="五-总结"><a href="#五-总结" class="headerlink" title="五.总结"></a>五.总结</h2><p><br>&emsp;&emsp;以上便是Handler源码的的整体分析，如果有疏漏的地方，还请指正。</p>
 
       
 
@@ -295,11 +406,7 @@ protected @Nullable AssetManager createAssetManager(@NonNull final ResourcesKey 
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">AssetManager</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Handler</a>
         		</li>
       		
 		</ul>
@@ -318,18 +425,9 @@ protected @Nullable AssetManager createAssetManager(@NonNull final ResourcesKey 
   
 <nav id="article-nav">
   
-    <a href="/2020/02/02/Android%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%B4%BB%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90%E4%B8%8E%E5%AE%9E%E7%8E%B0/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          Android进程保活方案分析与实现
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">深入理解插件化之四大组件activity的加载（二）</div>
+    <a href="/2020/02/02/Android%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%B4%BB%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90%E4%B8%8E%E5%AE%9E%E7%8E%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android进程保活方案分析与实现</div>
       <i class="icon-circle-right"></i>
     </a>
   

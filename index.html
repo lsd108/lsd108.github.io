@@ -135,6 +135,84 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Handler源码分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">Handler源码分析</a>
+    </h1>
+  
+
+        
+        <a href="/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-02-07T11:40:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-07</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程= 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handler机制可以解决以上问题，今天我将带领大家看一下handler相关的源码。</p>
+<hr>
+<h2 id="二-handler类图"><a href="#二-handler类图" class="headerlink" title="二.handler类图"></a>二.handler类图</h2><p>&emsp;&emsp;handler是一套Android消息传递机制，它主要涉及Handler、Message、MessageQueue、Looper等几个类，相关的类的方法我会在源码介绍中向大家说明</p>
+        
+          <a class="article-more-a" href="/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Handler</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/02/07/Handler%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Android进程保活方案分析与实现" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -478,95 +556,10 @@ InputStream is = getAssets().open(&quot;plugin_icon.jpg&quot;);</code></pre><p>�
 
 
   
-    <article id="post-无痕埋点ASM设计方案" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据</p>
-<hr>
-<h2 id="二-实现方案缺点比较"><a href="#二-实现方案缺点比较" class="headerlink" title="二.实现方案缺点比较"></a>二.实现方案缺点比较</h2><ul>
-<li>静态代理</li>
-</ul>
-<p>&emsp;&emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM</p>
-<ul>
-<li>动态代理</li>
-</ul>
-<p>&emsp;&emsp;就是要找到那个被点击的View的点击处理逻辑，然后利用截取view.onclicklistener或者window.callback，对原处理逻辑进行“拦截”</p>
-        
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">无痕埋点</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ASM</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
+    <nav id="page-nav">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+    </nav>
   
 
 
@@ -656,11 +649,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+                <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -669,6 +658,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">ASM</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
               </li>
              
               <li class="article-tag-list-item">
