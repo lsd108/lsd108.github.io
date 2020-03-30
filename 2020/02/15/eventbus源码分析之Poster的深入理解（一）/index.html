@@ -6,21 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Handler相关之源码分析 | Lsd&#39;s blog</title>
+  <title>eventbus源码分析之Poster的深入理解（一） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程&#x3D; 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handle">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;传统的事件传递我们会使用到handler,广播或者接口回调等，但是随着我们在开发的过程代码量的增大，以上方式会是我们的项目变得臃肿，所以我们在项目一般会使用eventbus事件总线框架。作为安卓开发，相信大家对eventbus的使用会很了解，这次我会根据自己的理解向大家介绍一下eventbus的源码（本次源码分析基于eventbus3.2.0）。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Handler相关之源码分析">
-<meta property="og:url" content="http://yoursite.com/2020/02/07/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:title" content="eventbus源码分析之Poster的深入理解（一）">
+<meta property="og:url" content="http://yoursite.com/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程&#x3D; 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handle">
-<meta property="og:image" content="https://i.ibb.co/qC469Lg/handler.png">
-<meta property="article:published_time" content="2020-02-07T11:40:29.000Z">
-<meta property="article:modified_time" content="2020-03-27T17:56:21.511Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;传统的事件传递我们会使用到handler,广播或者接口回调等，但是随着我们在开发的过程代码量的增大，以上方式会是我们的项目变得臃肿，所以我们在项目一般会使用eventbus事件总线框架。作为安卓开发，相信大家对eventbus的使用会很了解，这次我会根据自己的理解向大家介绍一下eventbus的源码（本次源码分析基于eventbus3.2.0）。">
+<meta property="article:published_time" content="2020-02-15T04:08:20.000Z">
+<meta property="article:modified_time" content="2020-03-30T12:26:09.688Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="Handler">
+<meta property="article:tag" content="Eventbus">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://i.ibb.co/qC469Lg/handler.png">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -140,224 +138,199 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-Handler相关之源码分析" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-eventbus源码分析之Poster的深入理解（一）" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      Handler相关之源码分析
+      eventbus源码分析之Poster的深入理解（一）
     </h1>
   
 
         
-        <a href="/2020/02/07/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2020-02-07T11:40:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-07</time>
+        <a href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-02-15T04:08:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-15</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;android.view.ViewRootImpl$CalledFromWrongThreadException这个异常相信大家都遇见过，简单翻译一下就是，线程调用异常。在android中为了UI操作是线程安全的，我们只允许UI线程更新UI控件（UI线程= 主线程），但是在实际开发中，是存在多个线程并发操作UI组件的情况，所以会导致UI操作的线程不安全。handler机制可以解决以上问题，今天我将带领大家看一下handler相关的源码。</p>
-<hr>
-<h2 id="二-handler类图"><a href="#二-handler类图" class="headerlink" title="二.handler类图"></a>二.handler类图</h2><p>&emsp;&emsp;handler是一套Android消息传递机制，它主要涉及Handler、Message、MessageQueue、Looper等几个类，相关的类的方法我会在源码介绍中向大家说明</p>
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;传统的事件传递我们会使用到handler,广播或者接口回调等，但是随着我们在开发的过程代码量的增大，以上方式会是我们的项目变得臃肿，所以我们在项目一般会使用eventbus事件总线框架。作为安卓开发，相信大家对eventbus的使用会很了解，这次我会根据自己的理解向大家介绍一下eventbus的源码（本次源码分析基于eventbus3.2.0）。</p>
 <a id="more"></a>
-<p><br>类图如下：<br><img src="https://i.ibb.co/qC469Lg/handler.png" alt="class"></p>
 <hr>
-<h2 id="三-handler的源码分析"><a href="#三-handler的源码分析" class="headerlink" title="三.handler的源码分析"></a>三.handler的源码分析</h2><p>&emsp;&emsp;众所周知Handler在发送消息时方式共分为2种：使用Handler.sendMessage（）、使用Handler.post（）。下面我会从使用 Handler.sendMessage（）出发，进行分析。首先我们先看Handler的构造方法</p>
-<pre><code>//Handler
-public Handler(Callback callback, boolean async) {
-    ...
-    //关联当前线程的Looper对象
-    mLooper = Looper.myLooper();
-    if (mLooper == null) {
-        throw new RuntimeException(
-            &quot;Can&apos;t create handler inside thread &quot; + Thread.currentThread()
-                    + &quot; that has not called Looper.prepare()&quot;);
-    }
-    //通过looper绑定MessageQueue
-    mQueue = mLooper.mQueue;
-    mCallback = callback;
-    mAsynchronous = async;
-}</code></pre><p>&emsp;&emsp;从以上源码可以看出，在handler的自身构造函数中，会关联当前线程的Looper对象，通过Looper对象绑定MessageQueue，那么这里问一个问题？handler是如何获取looper的呢？或者说，looper是什么时候创建的呢？接下来我们看一下looper</p>
-<pre><code>//在Looper
-//在Looper.prepare中set数据，否则sThreadLocal.get()将返回null
-static final ThreadLocal&lt;Looper&gt; sThreadLocal = new
-ThreadLocal&lt;Looper&gt;();
-
-public static void prepare() {
-    prepare(true);
+<h2 id="二-eventbus相关介绍和使用"><a href="#二-eventbus相关介绍和使用" class="headerlink" title="二.eventbus相关介绍和使用"></a>二.eventbus相关介绍和使用</h2><ul>
+<li>简单介绍</li>
+</ul>
+<p>&emsp;&emsp;eventbus是android的一个事件发布/订阅框架,可用于四大组件之间的通讯。它的优点是使用简单，代码简洁，可将事件发布和订阅完全解耦和。更多详细的介绍大家可在github上的地址仔细阅读，这里不做过多的赘述。<br><a href="https://github.com/greenrobot/EventBus" target="_blank" rel="noopener">https://github.com/greenrobot/EventBus</a></p>
+<ul>
+<li>eventbus的使用</li>
+</ul>
+<pre><code>@Override
+public void onStart() {
+    super.onStart();
+    //注册事件
+    EventBus.getDefault().register(this);
 }
-private static void prepare(boolean quitAllowed) {
-    if (sThreadLocal.get() != null) {
-        throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);
-    }
-    sThreadLocal.set(new Looper(quitAllowed));
+@Override
+public void onStop() {
+    super.onStop();
+    //解注册事件
+    EventBus.getDefault().unregister(this);
 }
-//主线程（UI线程）创建时自动调用，即 主线程的Looper对象自动生成，不需手动生成
-public static void prepareMainLooper() {
-    prepare(false);
-    synchronized (Looper.class) {
-        if (sMainLooper != null) {
-            throw new IllegalStateException(&quot;The main Looper has already been prepared.&quot;);
-        }
-        sMainLooper = myLooper();
-    }
-}</code></pre><p>&emsp;&emsp;通过不同的线程访问同一个threadlocal，不管是set还是get方法，对threadlocal所做的读写操作仅限于各自线程内部，使每一个线程有单独唯一的looper。这就是handler 使用threadlocal的原因。<br><br>&emsp;&emsp;创建Looper对象主要通过Looper.prepare()和Looper.prepareMainLooper()。而prepare()是为当前子线程创建，prepareMainLooper()是为主线程创建。然后Loopery又是通过Looper.loop()将消息循环，分发消息到Handler的。<br><br>&emsp;&emsp;接下来我们看下loop()方法。</p>
-<pre><code>//此出只展示主要代码
-public static void loop() {
-    final Looper me = myLooper();
-
-    //判断Looper是否为空，为空则抛出异常
-    if (me == null) {
-        throw new RuntimeException(&quot;No Looper; Looper.prepare() wasn&apos;t called on this thread.&quot;);
-    }
-    final MessageQueue queue = me.mQueue;
-
-    //通过for循环，从queue队列中取出消息
-    ...
-    for (;;) {
-        Message msg = queue.next(); // might block
-        if (msg == null) {
-            // No message indicates that the message queue is quitting.
-            return;
-        }
-        ...
-        try {
-           //分发消息到对应的handler
-           msg.target.dispatchMessage(msg);
-            dispatchEnd = needEndTime ? SystemClock.uptimeMillis() : 0;
-        } finally {
-            if (traceTag != 0) {
-                Trace.traceEnd(traceTag);
+//发送事件
+EventBus.getDefault().post(new TestEventbus(&quot;this is a event&quot;));
+//订阅者接受处理事件
+@Subscribe(threadMode = ThreadMode.MAIN)
+public void onMessageEvent(MessageEvent event){
+    Log.i(TAG,&quot;received event：&quot;+event.msg);
+}</code></pre><p>&emsp;&emsp;代码使用很简单，这里贴出来的原因是为了梳理事件订阅/发布的主要流程。eventbus的源码分析的系列文章也将从register，unregister，post，@Subscribe等四个方面着手。</p>
+<hr>
+<h2 id="三-从EventBus-getDefault-出发"><a href="#三-从EventBus-getDefault-出发" class="headerlink" title="三.从EventBus.getDefault()出发"></a>三.从EventBus.getDefault()出发</h2><pre><code>//EventBus
+static volatile EventBus defaultInstance;
+public static EventBus getDefault() {
+    EventBus instance = defaultInstance;
+    if (instance == null) {
+        synchronized (EventBus.class) {
+            instance = EventBus.defaultInstance;
+            if (instance == null) {
+                instance = EventBus.defaultInstance = new EventBus();
             }
         }
-        ...
-        //释放msg占有的资源
-        msg.recycleUnchecked();
     }
-}</code></pre><p><br>&emsp;&emsp;我们发现target也就是一个hander,绕了一圈，还是通过handler将消息传递给了消息队列，然后消息队列又将消息给了handler处理。所以handler的处理实际上有两个作用：发送消息，处理消息。发送消息调用的是dispatchMessage，我们再回到Handler中看一下此方法</p>
-<pre><code>public void dispatchMessage(Message msg) {
-    //如果msg.callback不为空，则当前发送消息的方式是post（Runnable r）
-    if (msg.callback != null) {
-        handleCallback(msg);
-    } else {
-        if (mCallback != null) {
-            if (mCallback.handleMessage(msg)) {
+    return instance;
+}</code></pre><p>&emsp;&emsp;我们一眼就可以看出它是一个Double-Check的单例模式，volatile关键字保证了defaultInstance在不同线程间的可见性，我们可以理解为在多线程环境下，我们看到的永远是最新修改的值。关于Double-Check的单例模式大家可以移步此处，了解一下。<br><a href="https://benjaminwhx.com/2018/05/15/%E8%AF%B4%E8%AF%B4%E5%8D%95%E4%BE%8B%E4%B8%8Edouble-check%E9%97%AE%E9%A2%98/" target="_blank" rel="noopener">https://benjaminwhx.com/2018/05/15/%E8%AF%B4%E8%AF%B4%E5%8D%95%E4%BE%8B%E4%B8%8Edouble-check%E9%97%AE%E9%A2%98/</a></p>
+<hr>
+<h2 id="三-eventbus的构造函数"><a href="#三-eventbus的构造函数" class="headerlink" title="三.eventbus的构造函数"></a>三.eventbus的构造函数</h2><pre><code>public EventBus() {
+    this(DEFAULT_BUILDER);
+}</code></pre><p>&emsp;&emsp;我们知道单例模式的构造函数一般都是private，但这里使用的是public，原因是什么呢？其实这样设计的原因是，EventBus可能有多条总线，订阅者注册到不同线上的 EventBus，通过不同的实例来发送数据，不同的EventBus是互不干扰的，订阅者就都只会收到注册到该线上的事件，保证了数据的准确性。<br><br>&emsp;&emsp;EventBus最终还是通过builder构建者模式来进行对象创建的，我们来一起详细看一看</p>
+<pre><code>EventBus(EventBusBuilder builder) {
+    //日志打印
+    logger = builder.getLogger();
+
+    //key是订阅事件，value是所有订阅者集合。发送Event事件时，会从此集合中寻找
+    subscriptionsByEventType = new HashMap&lt;&gt;();
+    //key是订阅者对象，value是这个订阅者订阅的所有事件集合。当我们register或者unregister的时都需要操作此集合
+    typesBySubscriber = new HashMap&lt;&gt;();
+    //key是粘性事件的class对象，value是粘性事件对象,是一个并发的集合
+    stickyEvents = new ConcurrentHashMap&lt;&gt;();
+
+    //判断是否在主线程发送事件
+    mainThreadSupport = builder.getMainThreadSupport();
+    //如果在主线程发送事件，则创建mainThreadPoster
+    mainThreadPoster = mainThreadSupport != null ? mainThreadSupport.createPoster(this) : null;
+    //创建backgroundPoster
+    backgroundPoster = new BackgroundPoster(this);
+    //创建asyncPoster
+    asyncPoster = new AsyncPoster(this);
+
+    //表示event生成的索引
+    indexCount = builder.subscriberInfoIndexes != null ? builder.subscriberInfoIndexes.size() : 0;
+    //创建Method方法的找寻器
+    subscriberMethodFinder = new SubscriberMethodFinder(builder.subscriberInfoIndexes,
+            builder.strictMethodVerification, builder.ignoreGeneratedIndex);
+
+    //有订阅者时，是否打印出异常   
+    logSubscriberExceptions = builder.logSubscriberExceptions;
+    //无订阅者时，是否打印出异常 
+    logNoSubscriberMessages = builder.logNoSubscriberMessages;
+    //反射调用订阅方法异常时是否发送事件
+    sendSubscriberExceptionEvent = builder.sendSubscriberExceptionEvent;
+    //没找到订阅方法时是否发送事件
+    sendNoSubscriberEvent = builder.sendNoSubscriberEvent;
+    //是否需要抛出异常
+    throwSubscriberException = builder.throwSubscriberException;
+    //是否支持event继承
+    eventInheritance = builder.eventInheritance;
+    //创建线程池
+    executorService = builder.executorService;
+}</code></pre><p>&emsp;&emsp;EventBus的构造函数中，我们主要说一下Poster的这几个重要成员，它们的作用其实就是用来切换线程的。</p>
+<h3 id="mainThreadPoster"><a href="#mainThreadPoster" class="headerlink" title="mainThreadPoster"></a>mainThreadPoster</h3><p><br>&emsp;&emsp;mainThreadPoster是通过MainThreadSupport的createPoster()方法构建出的一个HandlerPoster，这里我们详细看看HandlerPoster的源码</p>
+<pre><code>//HandlerPoster
+@Override
+public void handleMessage(Message msg) {
+    boolean rescheduled = false;
+    try {
+        long started = SystemClock.uptimeMillis();
+        while (true) {
+            //维护一个可复用的对象池
+            PendingPost pendingPost = queue.poll();
+            if (pendingPost == null) {
+                synchronized (this) {
+                    // Check again, this time in synchronized
+                    pendingPost = queue.poll();
+                    if (pendingPost == null) {
+                        handlerActive = false;
+                        return;
+                    }
+                }
+            }
+            eventBus.invokeSubscriber(pendingPost);
+            long timeInMethod = SystemClock.uptimeMillis() - started;
+            if (timeInMethod &gt;= maxMillisInsideHandleMessage) {
+                if (!sendMessage(obtainMessage())) {
+                    throw new EventBusException(&quot;Could not send handler message&quot;);
+                }
+                rescheduled = true;
                 return;
             }
         }
-        //如果msg.callback属性为空，则当前发送消息的方式是sendMessage（Message msg）
-        handleMessage(msg);
+    } finally {
+        handlerActive = rescheduled;
     }
-}
-
- private static void handleCallback(Message message) {
-    message.callback.run();
-}</code></pre><p><br>&emsp;&emsp;我们可以dispatchMessage(msg)当成一个中转站，在进行消息分发时，会判断msg.callback的属性。</p>
+}</code></pre><p>&emsp;&emsp;HandlerPoster实际上是一个handler,我们通过查看handleMessage的源码可以知道</p>
 <ul>
-<li>msg.callback不为空，则代表使用了post（Runnable r）发送消息，则回调Runnable对象里复写的run（）方法</li>
-<li>msg.callback为空，则代表使用了sendMessage（Message msg）发送消息，则回调复写的handleMessage(msg)方法</li>
+<li>1.开启一个循环，不断的从pendingPost中获取数据</li>
+<li>2.通过eventBus.invokeSubscriber进行数据的分发</li>
+<li>3.通过判断每次分发的时间是否小于它的最大值，来执行下一次的循环或者跳出循环</li>
 </ul>
-<p><br>&emsp;&emsp;我们重新回到Handler类中，看看sendMessage(Message msg)方法是如何将消息发送到消息队列的？</p>
-<pre><code>//Handler
-public final boolean sendMessage(Message msg)
-{
-    return sendMessageDelayed(msg, 0);
-}
-
-public final boolean sendMessageDelayed(Message msg, long delayMillis)
-{
-    if (delayMillis &lt; 0) {
-        delayMillis = 0;
-    }
-    return sendMessageAtTime(msg, SystemClock.uptimeMillis() + delayMillis);
-}
-
- public boolean sendMessageAtTime(Message msg, long uptimeMillis) {
-    MessageQueue queue = mQueue;
-    if (queue == null) {
-        RuntimeException e = new RuntimeException(
-                this + &quot; sendMessageAtTime() called with no mQueue&quot;);
-        Log.w(&quot;Looper&quot;, e.getMessage(), e);
-        return false;
-    }
-    return enqueueMessage(queue, msg, uptimeMillis);
-}
-
-private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
-    msg.target = this;
-    if (mAsynchronous) {
-        msg.setAsynchronous(true);
-    }
-    return queue.enqueueMessage(msg, uptimeMillis);
-}
-
-public final boolean postAtTime(Runnable r, long uptimeMillis)
-{
-    return sendMessageAtTime(getPostMessage(r), uptimeMillis);
-}</code></pre><p><br>&emsp;&emsp;通过上述源码，我们发现sendMessage(Message msg)和post（Runnable r）都会回调sendMessageAtTime(Message msg, long uptimeMillis)，在此方法中，首先会获取消息队列的对象MessageQueue，如果queue为空，则返回false,表明没有将消息添加至消息队列。<br><br>&emsp;&emsp;最后我们看看最终都会调用的enqueueMessage(queue, msg, uptimeMillis)方法</p>
-<pre><code>//MessageQueue
-boolean enqueueMessage(Message msg, long when) {
-    //1.判断msg.target是否为空，也就是当前的handler是否为空，为空则抛出异常
-    if (msg.target == null) {
-        throw new IllegalArgumentException(&quot;Message must have a target.&quot;);
-    }
-    //2.判断当前的msg已被使用，如果已被使用，抛出异常
-    if (msg.isInUse()) {
-        throw new IllegalStateException(msg + &quot; This message is already in use.&quot;);
-    }
-
-    synchronized (this) {
-        //3.判断当前线程是否处于退出状态
-        if (mQuitting) {
-            IllegalStateException e = new IllegalStateException(
-                    msg.target + &quot; sending message to a Handler on a dead thread&quot;);
-            Log.w(TAG, e.getMessage(), e);
-            msg.recycle();
-            return false;
-        }
-
-        msg.markInUse();
-        msg.when = when;
-        Message p = mMessages;
-        boolean needWake;
-        //判断消息队列中是否有消息
-        if (p == null || when == 0 || when &lt; p.when) {
-            // New head, wake up the event queue if blocked.
-            msg.next = p;
-            mMessages = msg;
-            needWake = mBlocked;
-        } else {
-
-            needWake = mBlocked &amp;&amp; p.target == null &amp;&amp; msg.isAsynchronous();
-            Message prev;
-            //队列中有消息，循环将message根据创建的时间插入到队列
-            for (;;) {
-                prev = p;
-                p = p.next;
-                if (p == null || when &lt; p.when) {
-                    break;
+<p>&emsp;&emsp;分析到这，我们可以知道invoke方法其实是在handleMessage当中执行的，而handleMessage是在主线程中执行的，因为它的looper是mainLooper。所以当订阅方法的threadMode是MAIN或MAIN_ORDERED这种非UI线程时，EventBus就会切到切换到UI线程了</p>
+<h3 id="backgroundPoster"><a href="#backgroundPoster" class="headerlink" title="backgroundPoster"></a>backgroundPoster</h3><p>&emsp;&emsp;BackgroundPoster是Poster的实现类，同时也实现了Runnable接口。在它的内部封装了一个PendingPost队列，我们也主要看一下它的一个run方法</p>
+<pre><code>//BackgroundPoster
+@Override
+public void run() {
+    try {
+        try {
+            while (true) {
+                PendingPost pendingPost = queue.poll(1000);
+                if (pendingPost == null) {
+                    synchronized (this) {
+                        // Check again, this time in synchronized
+                        pendingPost = queue.poll();
+                        if (pendingPost == null) {
+                            executorRunning = false;
+                            return;
+                        }
+                    }
                 }
-                if (needWake &amp;&amp; p.isAsynchronous()) {
-                    needWake = false;
-                }
+                eventBus.invokeSubscriber(pendingPost);
             }
-            msg.next = p; // invariant: p == prev.next
-            prev.next = msg;
+        } catch (InterruptedException e) {
+            eventBus.getLogger().log(Level.WARNING, Thread.currentThread().getName() + &quot; was interruppted&quot;, e);
         }
-
-        // We can assume mPtr != 0 because mQuitting is false.
-        if (needWake) {
-            nativeWake(mPtr);
-        }
+    } finally {
+        executorRunning = false;
     }
-    return true;
-}</code></pre><p><br>&emsp;&emsp;相应的步骤已在源码中进行分析。在此之后，随着Looper对象的无限消息循环，会不断从消息队列中取出Handler发送的消息并分发到对应Handler，最后回调Handler.handleMessage()处理消息。</p>
+}</code></pre><p>&emsp;&emsp;BackgroundPoster的run方法也是在while循环中，不断从队列中取出pendingPost，当pendingPost 为null时，会将executorRunning设置为false跳出循环。当下次有新的事件时，会再提交任务到线程池执行。倘若pendingPost不为空，则去调用invokeSubscriber方法。只是此时的invoke方法是执行在后台线程中的。</p>
+<h3 id="asyncPoster"><a href="#asyncPoster" class="headerlink" title="asyncPoster"></a>asyncPoster</h3><p>&emsp;&emsp;asyncPoster实际上也是一个Runnable，我们直接看run方法。</p>
+<pre><code> @Override
+public void run() {
+    PendingPost pendingPost = queue.poll();
+    if(pendingPost == null) {
+        throw new IllegalStateException(&quot;No pending post available&quot;);
+    }
+    eventBus.invokeSubscriber(pendingPost);
+}</code></pre><p>&emsp;&emsp;asyncPoster也是通过后台线程调用订阅者的方法，完成一个事件的发布。每次只取一个pendingPost，不论发布线程是否为主线程，都会开启新的线程执行。</p>
 <hr>
-<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p><br>&emsp;&emsp;以上便是Handler源码的的整体分析，如果有疏漏的地方，还请指正。</p>
+<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p>&emsp;&emsp;今天我们主要分析eventbus的几种Poster，总结如下：</p>
+<ul>
+<li>mainThreadPoster是负责切换到主线程调用的订阅方法，它会先将事件加入队列，然后用Handler切换到主线程，最后在handleMessage中不断取出事件发送给订阅者处理</li>
+<li>backgroundPoster是负责切换到非主线程调用的订阅方法，它同样将事件加入队列，然后利用线程池切换到子线程，不断从链表取出事件发送给订阅者处理</li>
+<li>asyncPoster不管当前在什么线程，都会开启一个子线程去处理。但是和backgroundPoster不同，asyncPoster一次处理一个事件，asyncPoster的所有线程是相互独立的，因此不会出现线程卡顿的问题；而backgroundPoster会遍历队列所有事件，可以保证当前队列中的所有事件在一个子线程中处理</li>
+</ul>
+<p><br>&emsp;&emsp;到这里就分析完了EventBus的初始化构造以及几种Poster，后面会针对register，unregister和事件发送流程做一个分析，这些都是读者自己的理解，如果有疏漏的地方，还请大家多多指正</p>
 
       
 
@@ -371,7 +344,7 @@ boolean enqueueMessage(Message msg, long when) {
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Handler</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
         		</li>
       		
 		</ul>
@@ -390,18 +363,9 @@ boolean enqueueMessage(Message msg, long when) {
   
 <nav id="article-nav">
   
-    <a href="/2020/02/10/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E5%9B%BE%E8%A7%A3%E9%80%BB%E8%BE%91%E6%95%B4%E7%90%86/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          Handler相关之图解逻辑整理
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/02/02/Android%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%B4%BB%E6%96%B9%E6%A1%88%E5%88%86%E6%9E%90%E4%B8%8E%E5%AE%9E%E7%8E%B0/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Android进程保活方案分析与实现</div>
+    <a href="/2020/02/10/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E5%9B%BE%E8%A7%A3%E9%80%BB%E8%BE%91%E6%95%B4%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Handler相关之图解逻辑整理</div>
       <i class="icon-circle-right"></i>
     </a>
   
