@@ -135,6 +135,89 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-深入理解插件化之资源的加载（三）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/">深入理解插件化之资源的加载（三）</a>
+    </h1>
+  
+
+        
+        <a href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-01-27T10:39:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-27</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;前两篇博文针对插件化的classLoader类加载机制和activty加载进行了分析，但是在安卓中还有一个重要点——资源插件化。在我们的项目中，一般通过Resources去访问res中的资源，使用AssetManager访问assets中的资源，具体如何实现我们来一起分析</p>
+<hr>
+<h2 id="二-具体的源码分析"><a href="#二-具体的源码分析" class="headerlink" title="二.具体的源码分析"></a>二.具体的源码分析</h2><pre><code>Drawable drawable = resources.getDrawable(resId);
+InputStream is = getAssets().open(&quot;plugin_icon.jpg&quot;);</code></pre><p>上面这种方式是我们平时获取resources和assets资源的使用方式。首先我们来看下Resources的源码<br>
+        
+          <a class="article-more-a" href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">AssetManager</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-深入理解插件化之四大组件activity的加载（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -496,7 +579,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
+                <a href="javascript:void(0)" class="js-tag color4">Eventbus</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -508,7 +599,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -516,15 +607,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Eventbus</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
             
             <div class="clearfix"></div>

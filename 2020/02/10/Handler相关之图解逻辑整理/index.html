@@ -16,7 +16,7 @@
 <meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;在上一篇博文，我们一起分析了handler的源码，可谓是“又臭又长”，本篇文章将用流程图的方式对handler逻辑再进行一个整理，加深大家对handler的印象，同时handler在使用不当时也会造成内存泄露，本篇文章将教大家如何避免这些问题。">
 <meta property="og:image" content="https://i.ibb.co/kVLptz0/1.png">
 <meta property="article:published_time" content="2020-02-10T12:40:20.000Z">
-<meta property="article:modified_time" content="2020-03-29T14:37:10.290Z">
+<meta property="article:modified_time" content="2020-04-01T04:52:53.222Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="Handler">
 <meta property="article:tag" content="内存泄露">
@@ -166,10 +166,10 @@
 <hr>
 <h2 id="二-handler流程图"><a href="#二-handler流程图" class="headerlink" title="二.handler流程图"></a>二.handler流程图</h2><p><img src="https://i.ibb.co/kVLptz0/1.png" alt="class"><br><br>&emsp;&emsp;根据流程图总结如下：</p>
 <ul>
-<li>应用程序创建时，会创建一个Looper和message’Quere</li>
+<li>应用程序创建时，会创建一个Looper和messageQuere</li>
 <li>创建Handler实例，绑定当前所在的线程和messageQuere消息队列</li>
 <li>根据发送方式的不同，创建Message消息对象，如果是Handler.sendMessage()，则外部创建，直接传入Handler;如果是Handler.post()，则根据传入的Runnable对象进行内部封装</li>
-<li>Looper的无限消息循环，不断的从message’Quere中取出message并分发至对应的handler处理。如果发送采用Handler.sendMessage()的方式，则回调方是Handler.handleMessage();如果发送采用Handler.post()的方式，则则回调方是Runnable.run()</li>
+<li>Looper的无限消息循环，不断的从messageQuere中取出message并分发至对应的handler处理。如果发送采用Handler.sendMessage()的方式，则回调方是Handler.handleMessage();如果发送采用Handler.post()的方式，则则回调方是Runnable.run()</li>
 </ul>
 <hr>
 <h2 id="三-handler如何避免内存泄漏"><a href="#三-handler如何避免内存泄漏" class="headerlink" title="三.handler如何避免内存泄漏"></a>三.handler如何避免内存泄漏</h2><p>&emsp;&emsp;使用方法很简单，我们创建了一个静态内部类的Handler实例,不会隐式持有他们外部类的引用。同时我们考虑到可能会在Handle内部调用外部Activity的方法，所以让Handler持有Activity的弱引用（WeakReference），最后我们在onDestroy()中调用removeCallback()，将handler移除，这样避免了handler使用不当而造成内存的泄漏。</p>
@@ -388,7 +388,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
+                <a href="javascript:void(0)" class="js-tag color4">Eventbus</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -400,7 +408,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -408,15 +416,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">Eventbus</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
             
             <div class="clearfix"></div>
