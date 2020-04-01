@@ -6,11 +6,11 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>深入理解插件化之Classloader类加载（一） | Lsd&#39;s blog</title>
+  <title>插件化之Classloader类加载（一） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="一.插件化的来源&amp;emsp;&amp;emsp;插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。  二.插件化所要解决的问题 减少APP体积，随着逐渐的迭代开发APP的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="深入理解插件化之Classloader类加载（一）">
+<meta property="og:title" content="插件化之Classloader类加载（一）">
 <meta property="og:url" content="http://yoursite.com/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
 <meta property="og:description" content="一.插件化的来源&amp;emsp;&amp;emsp;插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。  二.插件化所要解决的问题 减少APP体积，随着逐渐的迭代开发APP的">
@@ -19,7 +19,7 @@
 <meta property="og:image" content="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JClRCkHsOaS3XHWEGjmbPDQQqhdl4emB3kO0SFJYkZ0787Z70tPnVIQnOjo*L*229Q!!/b&bo=XwU4BAAAAAADB0Q!&rf=viewer_4">
 <meta property="og:image" content="http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4http://m.qpic.cn/psc?/V12pZIO04GfkC4/wK0kFdeCHxQUuvx1sBu8JH*zFHhT.czohjsOhwVsGaVG1Hf.XmtHC7qHdJD9uiSAy*d8c*8gkckmjKi5e*KAhg!!/b&bo=iANNA4gDTQMDCSw!&rf=viewer_4">
 <meta property="article:published_time" content="2020-01-15T04:30:21.000Z">
-<meta property="article:modified_time" content="2020-03-17T15:46:16.790Z">
+<meta property="article:modified_time" content="2020-04-01T09:36:00.661Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="插件化">
 <meta property="article:tag" content="Classloader">
@@ -151,7 +151,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      深入理解插件化之Classloader类加载（一）
+      插件化之Classloader类加载（一）
     </h1>
   
 
@@ -315,7 +315,7 @@ protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          深入理解插件化之四大组件activity的加载（二）
+          插件化之四大组件activity的加载（二）
         
       </div>
     </a>
@@ -440,6 +440,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
@@ -452,14 +456,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
               </li>
              
@@ -468,15 +464,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
             
             <div class="clearfix"></div>
