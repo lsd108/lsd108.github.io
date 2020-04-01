@@ -6,13 +6,18 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Archives | Lsd&#39;s blog</title>
+  <title>eventbus源码分析之post,postSticky流程分析（三） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/archives/index.html">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。  二.eventbus的post普通事件发布&amp;emsp;&amp;emsp;当我们发布一个普通事件时，一般会这样写： EventBus.getDefault().post(event);&amp;emsp;&amp;emsp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="eventbus源码分析之post,postSticky流程分析（三）">
+<meta property="og:url" content="http://yoursite.com/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。  二.eventbus的post普通事件发布&amp;emsp;&amp;emsp;当我们发布一个普通事件时，一般会这样写： EventBus.getDefault().post(event);&amp;emsp;&amp;emsp">
+<meta property="article:published_time" content="2020-02-28T12:08:08.000Z">
+<meta property="article:modified_time" content="2020-04-01T16:49:32.446Z">
 <meta property="article:author" content="李思达">
+<meta property="article:tag" content="Eventbus">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
@@ -133,36 +138,238 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
+            <article id="post-eventbus源码分析之post,postSticky流程分析（三）" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
   
+    <h1 class="article-title" itemprop="name">
+      eventbus源码分析之post,postSticky流程分析（三）
+    </h1>
   
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
+
+        
+        <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
   	<time datetime="2020-02-28T12:08:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-28</time>
 </a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/">eventbus源码分析之post,postSticky流程分析（三）</a>
-    </h1>
-  
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。</p>
+<hr>
+<h2 id="二-eventbus的post普通事件发布"><a href="#二-eventbus的post普通事件发布" class="headerlink" title="二.eventbus的post普通事件发布"></a>二.eventbus的post普通事件发布</h2><p>&emsp;&emsp;当我们发布一个普通事件时，一般会这样写：</p>
+<pre><code>EventBus.getDefault().post(event);</code></pre><p>&emsp;&emsp;接下来我们直接看看post方法</p>
+<a id="more"></a>   
+<pre><code>public void post(Object event) {
+    //通过currentPostingThreadState获取当前线程的PostingThreadState对象
+    PostingThreadState postingState = currentPostingThreadState.get();
+    //通过postingStat中获取事件队列的list
+    List&lt;Object&gt; eventQueue = postingState.eventQueue;
+    eventQueue.add(event);
+    //判断事件是否发布
+    if (!postingState.isPosting) {
+        //判断是否是主线程
+        postingState.isMainThread = isMainThread();
+        postingState.isPosting = true;
+        //发布状态是否被取消
+        if (postingState.canceled) {
+            throw new EventBusException(&quot;Internal error. Abort state was not reset&quot;);
+        }
+        try {
+           //遍历eventQueue事件队列，取出事件event进行分发
+            while (!eventQueue.isEmpty()) {
+                postSingleEvent(eventQueue.remove(0), postingState);
+            }
+        } finally {
+            //复位操作
+            postingState.isPosting = false;
+            postingState.isMainThread = false;
+        }
+    }
+}
+//ThreadLocal存储，避免并发问题
+private final ThreadLocal&lt;PostingThreadState&gt; currentPostingThreadState = new ThreadLocal&lt;PostingThreadState&gt;() {
+    @Override
+    protected PostingThreadState initialValue() {
+        return new PostingThreadState();
+    }
+};
 
-        <div class="article-info info-on-right">
-          
+final static class PostingThreadState {
+    final List&lt;Object&gt; eventQueue = new ArrayList&lt;&gt;();//事件队列的集合
+    boolean isPosting;//事件是否在发布
+    boolean isMainThread;//当前是否处于是否处于主线程
+    Subscription subscription;//订阅信息
+    Object event;//当前事件
+    boolean canceled;//发布的事件是否取消
+}</code></pre><p>&emsp;&emsp;post方法中有两个重点：</p>
+<ul>
+<li>currentPostingThreadState<br><br>&emsp;&emsp;currentPostingThreadState实际上是一个ThreadLocal，这样的使用方式在很大程度上可以避免多线程并发问题。它存储的PostingThreadState包含事件发布过程中的相关信息。</li>
+<li>postSingleEvent<br><br>&emsp;&emsp;通过while循环遍历事件队列，取出每个事件，然后调用postSingleEvent发布事件，同时将相应事件从队列中remove</li>
+</ul>
+<p><br>下面我们重点看一下postSingleEvent方法</p>
+<h3 id="postSingleEvent"><a href="#postSingleEvent" class="headerlink" title="postSingleEvent"></a>postSingleEvent</h3><pre><code>private void postSingleEvent(Object event, PostingThreadState postingState) throws Error {
+    Class&lt;?&gt; eventClass = event.getClass();
+    //是否发现该事件对应的订阅方法，默认为false
+    boolean subscriptionFound = false;
+    //判断是否支持事件继承
+    if (eventInheritance) {
+        //通过lookupAllEventTypes方法从缓存中获取到所有的事件类型
+        List&lt;Class&lt;?&gt;&gt; eventTypes = lookupAllEventTypes(eventClass);
+        int countTypes = eventTypes.size();
+        for (int h = 0; h &lt; countTypes; h++) {
+            Class&lt;?&gt; clazz = eventTypes.get(h);
+            //发布事件
+            subscriptionFound |= postSingleEventForEventType(event, postingState, clazz);
+        }
+    } else {
+        //直接发布事件
+        subscriptionFound = postSingleEventForEventType(event, postingState, eventClass);
+    }
+    //判断是否发现该事件对应的订阅方法
+    if (!subscriptionFound) {
+        if (logNoSubscriberMessages) {
+            logger.log(Level.FINE, &quot;No subscribers registered for event &quot; + eventClass);
+        }
+        if (sendNoSubscriberEvent &amp;&amp; eventClass != NoSubscriberEvent.class &amp;&amp;
+                eventClass != SubscriberExceptionEvent.class) {
+            //发布NoSubscriberEvent事件
+            post(new NoSubscriberEvent(this, event));
+        }
+    }
+}</code></pre><p>&emsp;&emsp;简单总结一下上述源码的流程，首先判断是否支持事件继承，如果支持，则通过lookupAllEventTypes方法从缓存中获取到所有的事件类型，再调用postSingleEventForEventType发布事件；如果不支持，直接调用postSingleEventForEventType，所以接下来我们要看的就是这里的逻辑了。</p>
+<h3 id="postSingleEventForEventType"><a href="#postSingleEventForEventType" class="headerlink" title="postSingleEventForEventType"></a>postSingleEventForEventType</h3><pre><code>private boolean postSingleEventForEventType(Object event, PostingThreadState postingState, Class&lt;?&gt; eventClass) {
+    CopyOnWriteArrayList&lt;Subscription&gt; subscriptions;
+    synchronized (this) {
+        //通过subscriptionsByEventType，传入eventClass，得到事件参数类型对应的subscriptions
+        subscriptions = subscriptionsByEventType.get(eventClass);
+    }
+    if (subscriptions != null &amp;&amp; !subscriptions.isEmpty()) {
+        for (Subscription subscription : subscriptions) {
+            postingState.event = event;
+            postingState.subscription = subscription;
+            boolean aborted;
+            try {
+                //将事件发送给subscription中保存的订阅方法
+                postToSubscription(subscription, event, postingState.isMainThread);
+                aborted = postingState.canceled;
+            } finally {
+                //复位操作
+                postingState.event = null;
+                postingState.subscription = null;
+                postingState.canceled = false;
+            }
+            if (aborted) {
+                break;
+            }
+        }
+        return true;
+    }
+    return false;
+}</code></pre><p>&emsp;&emsp;再来一个小结，首先通过subscriptionsByEventType方法，得到事件参数类型对应的subscriptions。然后判断subscriptions是否为空，为空直接返回false；不为空，则遍历订阅信息集合，使用postToSubscription发布事件</p>
+<h3 id="postToSubscription"><a href="#postToSubscription" class="headerlink" title="postToSubscription"></a>postToSubscription</h3><pre><code>private void postToSubscription(Subscription subscription, Object event, boolean isMainThread) {
+    //判断线程模式
+    switch (subscription.subscriberMethod.threadMode) {
+        case POSTING:
+            invokeSubscriber(subscription, event);
+            break;
+        case MAIN:
+            if (isMainThread) {
+                invokeSubscriber(subscription, event);
+            } else {
+                mainThreadPoster.enqueue(subscription, event);
+            }
+            break;
+        case MAIN_ORDERED:
+            if (mainThreadPoster != null) {
+                mainThreadPoster.enqueue(subscription, event);
+            } else {
+                // temporary: technically not correct as poster not decoupled from subscriber
+                invokeSubscriber(subscription, event);
+            }
+            break;
+        case BACKGROUND:
+            if (isMainThread) {
+                backgroundPoster.enqueue(subscription, event);
+            } else {
+                invokeSubscriber(subscription, event);
+            }
+            break;
+        case ASYNC:
+            asyncPoster.enqueue(subscription, event);
+            break;
+        default:
+            throw new IllegalStateException(&quot;Unknown thread mode: &quot; + subscription.subscriberMethod.threadMode);
+    }
+}
+
+//EventBus的几个不同线程模式
+public enum ThreadMode {
+    POSTING,
+    MAIN,
+    MAIN_ORDERED,
+    BACKGROUND,
+    ASYNC
+}</code></pre><p>&emsp;&emsp;postToSubscription看到这里，也和eventbus的几个Poster相呼应了，关于ThreadMode的几种，我整理了一个表格。postToSubscription是通过方法注解中定义的ThreadMode来切换当前事件的线程，不管当前是在哪一个线程最后都会通过调用invokeSubscriber来订阅方法，它内部也就是一个反射的机制。</p>
+<table>
+<thead>
+<tr>
+<th>线程模式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>POSTING</td>
+<td>事件发布和执行订阅方法在同一个线程</td>
+</tr>
+<tr>
+<td>MAIN</td>
+<td>不管事件发布在哪个线程，执行方法都在主线程</td>
+</tr>
+<tr>
+<td>MAIN_ORDERED</td>
+<td>不管事件发布在哪个线程，执行方法都在主线程，与MAIN的区别是它是通过队列来进行的，并不是直接调用</td>
+</tr>
+<tr>
+<td>BACKGROUND</td>
+<td>事件发布在主线程，则后台线程执行订阅方法；事件发布在子线程，则在该线程执行订阅方法</td>
+</tr>
+<tr>
+<td>ASYNC</td>
+<td>不管事件发布在哪个线程，都开启新的子线程处理</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="三-eventbus的postSticky粘性事件发布"><a href="#三-eventbus的postSticky粘性事件发布" class="headerlink" title="三.eventbus的postSticky粘性事件发布"></a>三.eventbus的postSticky粘性事件发布</h2><p>&emsp;&emsp;什么是黏性事件呢？简单来讲，就是在事件发布之后再订阅该事件也能收到该事件    </p>
+<pre><code>EventBus.getDefault().postSticky(event);</code></pre><p>&emsp;&emsp;粘性事件的发布使用也很简单，我们直接源码走起     </p>
+<pre><code>public void postSticky(Object event) {
+    synchronized (stickyEvents) {
+        stickyEvents.put(event.getClass(), event);
+    }
+    post(event);
+}</code></pre><p>&emsp;&emsp;postSticky的逻辑很简单，首先将事件保存到stickyEvents中，然后调用普通事件发布的post方法即可</p>
+<hr>
+<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p>&emsp;&emsp;老规矩针对post和postSticky做一个小结：</p>
+<ul>
+<li>post <ul>
+<li>1.将需要发布的事件，根据事件类型加入到事件队列中</li>
+<li>2.遍历事件队列，判断线程模式，根据线程模式的不同执行相应的订阅方法</li>
+</ul>
+</li>
+<li>postSticky<br><br>&emsp;&emsp;在执行以上步骤一之前，先将该事件放入 stickyEvents中</li>
+</ul>
+<p>在这里问一个问题，什么情况下使用粘性事件的发布呢？<br><br>&emsp;&emsp;我们说一个场景，我们在一个非ui线程调用网络接口，发布事件，然后在在订阅该事件的订阅方法更新ui。此时，你使用post就可能会导致无法更新，因为你可能在发布事件完成后，当前ui所承载的界面还未加载完毕。此时就需要用到postSticky，粘性事件可以事先发送事件，待接收方订阅后再接受事件，它处理了异步所带来的问题。<br><br>&emsp;&emsp;这篇文章是eventbus系列的最后一篇，相信大家对eventbus的整体流程也有了一个了解，如果在文章存在理解失误的地方，还请见谅。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -174,178 +381,54 @@
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-21T11:08:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-21</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">eventbus源码分析之register，unregister流程分析（二）</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/">eventbus源码分析之register，unregister流程分析（二）</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-15T04:08:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-15</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/">eventbus源码分析之Poster的深入理解（一）</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/10/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E5%9B%BE%E8%A7%A3%E9%80%BB%E8%BE%91%E6%95%B4%E7%90%86/" class="archive-article-date">
-  	<time datetime="2020-02-10T12:40:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-10</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/10/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E5%9B%BE%E8%A7%A3%E9%80%BB%E8%BE%91%E6%95%B4%E7%90%86/">Handler相关之图解逻辑整理</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Handler</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">内存泄露</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/07/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2020-02-07T11:40:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-07</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/07/Handler%E7%9B%B8%E5%85%B3%E4%B9%8B%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">Handler相关之源码分析</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Handler</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
-
-    
-    <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/archives/page/2/">2</a><a class="extend next" rel="next" href="/archives/page/2/">Next &amp;raquo;</a>
-    </nav>
   
 
 
@@ -369,8 +452,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: true,
