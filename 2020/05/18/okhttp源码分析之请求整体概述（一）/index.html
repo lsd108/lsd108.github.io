@@ -6,26 +6,21 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>无痕埋点ASM设计方案 | Lsd&#39;s blog</title>
+  <title>okhttp源码分析之请求整体概述（一） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.无痕埋点概述&amp;emsp;&amp;emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据  二.实现方案缺点比较 静态代理  &amp;emsp;&amp;emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM  动态代理  &amp;emsp;&amp;">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。&amp;emsp;&amp;emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）">
 <meta property="og:type" content="article">
-<meta property="og:title" content="无痕埋点ASM设计方案">
-<meta property="og:url" content="http://yoursite.com/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:title" content="okhttp源码分析之请求整体概述（一）">
+<meta property="og:url" content="http://yoursite.com/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.无痕埋点概述&amp;emsp;&amp;emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据  二.实现方案缺点比较 静态代理  &amp;emsp;&amp;emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM  动态代理  &amp;emsp;&amp;">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/d420140854673af0474d7434f0ad230e.jpeg">
-<meta property="og:image" content="https://lu-test.oss-cn-hangzhou.aliyuncs.com/uploads/3d167b909544b178ee05523bf08a1536.png">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/b5e32a5ae3badce8f878bfa2a953c740.jpeg">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/d427ca57383d9c5422a26d8b114d9162.jpeg">
-<meta property="article:published_time" content="2020-01-13T13:29:22.000Z">
-<meta property="article:modified_time" content="2020-03-17T15:45:13.736Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。&amp;emsp;&amp;emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）">
+<meta property="og:image" content="https://i.ibb.co/HtSx5YL/okhttp.png">
+<meta property="article:published_time" content="2020-05-18T06:29:20.000Z">
+<meta property="article:modified_time" content="2020-05-18T06:55:23.483Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="无痕埋点">
-<meta property="article:tag" content="ASM">
+<meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg">
+<meta name="twitter:image" content="https://i.ibb.co/HtSx5YL/okhttp.png">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -145,255 +140,281 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-无痕埋点ASM设计方案" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-okhttp源码分析之请求整体概述（一）" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      无痕埋点ASM设计方案
+      okhttp源码分析之请求整体概述（一）
     </h1>
   
 
         
-        <a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
+        <a href="/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-05-18T06:29:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-18</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据</p>
-<hr>
-<h2 id="二-实现方案缺点比较"><a href="#二-实现方案缺点比较" class="headerlink" title="二.实现方案缺点比较"></a>二.实现方案缺点比较</h2><ul>
-<li>静态代理</li>
-</ul>
-<p>&emsp;&emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM</p>
-<ul>
-<li>动态代理</li>
-</ul>
-<p>&emsp;&emsp;就是要找到那个被点击的View的点击处理逻辑，然后利用截取view.onclicklistener或者window.callback，对原处理逻辑进行“拦截”</p>
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。<br><br>&emsp;&emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）</p>
 <a id="more"></a>
-<p>经过各个方案demo的测试，各方案缺点如下：<br><br/>&emsp;&emsp;动态代理缺点<br><br/>&emsp;&emsp;1.部分方案由于使用反射，效率比较低，对 App 的整体性能有一定的影响，也可能会引入兼容性方面的风险<br><br/>&emsp;&emsp;2.Application.ActivityLifecycleCallbacks 要求 API 14+，View.hasOnClickListeners() 要求 API 15+， removeOnGlobalLayoutListener 要求 API 16+<br><br/>&emsp;&emsp;3.无法直接支持采集游离于 Activity 之上的 View 的点击，比如 Dialog、PopupWindow ……</p>
-<p><br/>&emsp;&emsp;静态代理缺点<br><br/>&emsp;&emsp;1.aspectJ不支持lambda表达式<br><br/>&emsp;&emsp;2.aspectJ会和gradle4.x有兼容问题</p>
-<p>总结：针对一般手机中最好的方案：<br><br/>&emsp;&emsp;ASM &gt; aspectJ &gt; view.onclicklistener = window.callback<br><br/>&emsp;&emsp;ASM插桩的方案，目前并没有什么缺陷，在demo中适用于lambda表达式，但是集成至项目中和lambda表达式不兼容，此问题已同步至“无痕埋点”作者，后续可解决。</p>
+
 <hr>
-<h2 id="三-ASM方案实现思路"><a href="#三-ASM方案实现思路" class="headerlink" title="三.ASM方案实现思路"></a>三.ASM方案实现思路</h2><ul>
-<li>lib中<br><br/>1.将lutrack从cloud抽出，独立成moudle<br><br/>2.创建trackPlugin，将现有的公共参数埋入插件方法，并对目前控件view的click和show方法插桩。</li>
-<li>上层应用中<br><br/>集成插件即可。</li>
-</ul>
+<h2 id="二-okhttp的使用"><a href="#二-okhttp的使用" class="headerlink" title="二.okhttp的使用"></a>二.okhttp的使用</h2><pre><code>private fun okhttpTest() {
+    //创建OKHttpClient客户端
+    val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .build()
+    //创建Request对象
+    val request = Request.Builder().url(&quot;http://www.baidu.com&quot;).get().build()
+    //okhttp同步请求execute
+    val response = okHttpClient.newCall(request).execute()
+    //okhttp异步请求enqueue
+    okHttpClient.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+        }
+    })
+}</code></pre><p>&emsp;&emsp;网络请求的使用很简单，首先创建一个OKHttpClient客户端，然后创建一个Request对象，我们发现二者都是使用Builder模式。然后同步请求会直接返回一个response对象给我们，异步请求会通过接口回调的方式返回response</p>
 <hr>
-<h2 id="四-具体类介绍"><a href="#四-具体类介绍" class="headerlink" title="四.具体类介绍"></a>四.具体类介绍</h2><ul>
-<li>lutrack类介绍<br><br/><img src="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg" alt="class">   <ul>
-<li>Lutracker：埋点类，封装基础埋点参数，暴露track方法给插件<br/></li>
-<li>TrackDataPrivate：控件私有属性获取类，提供获取控件类型，获取控件文本内容，获取view所属的activivty等方法<br/></li>
-<li>TrackViewOnClick：xml点击interface封装（上层的点击事件倘若使用xml的点击实现，无法通过普通插桩解决，需要独立封装接口）<br/></li>
-<li>AutoTrackHelper:提供当前需要截取的view类型</li>
-</ul>
-</li>
-</ul>
-<ul>
-<li>trackPlugin插件类介绍<br><br/><img src="https://s.changjinglu.net/uploads/d420140854673af0474d7434f0ad230e.jpeg" alt="class"> <ul>
-<li>TrackDefaultMethodVisitor：实现了MethodVisitor接口，主要负责”拜访”方法的信息，用来进行具体的方法字节码操作<br/></li>
-<li>TrackClassVisitor：主要负责”拜访”类成员信息。其中包括标记在类上的注解，类的构造方法,类的字段，类的方法，静态代码块<br/></li>
-<li>TrackModifier：提供当前的class文件和jar文件，提供input输出文件<br/></li>
-<li>TrackTransform：定义当前task的名称，需要处理的数据类型，以及要操作内容的范围</li>
-</ul>
-</li>
-</ul>
-<ul>
-<li>完整的实现类图<br><img src="https://lu-test.oss-cn-hangzhou.aliyuncs.com/uploads/3d167b909544b178ee05523bf08a1536.png" alt="class"></li>
-</ul>
+<h2 id="三-从OkHttpClient出发"><a href="#三-从OkHttpClient出发" class="headerlink" title="三.从OkHttpClient出发"></a>三.从OkHttpClient出发</h2><pre><code>//http请求的分发器
+internal var dispatcher: Dispatcher = Dispatcher()
+//连接池：1.请求的url相同时可以复用 2.减少延迟并节省内存
+internal var connectionPool: ConnectionPool = ConnectionPool()
+//拦截器集合
+internal val interceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
+//网络请求拦截器集合
+internal val networkInterceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
+//网络请求的事件监听器，监听流程中的调用，代理选择，连接等各种状态的开始以及结束
+internal var eventListenerFactory: EventListener.Factory = EventListener.NONE.asFactory()
+//连接失败时候是否重试
+internal var retryOnConnectionFailure = true
+//代理模式的接口，在发送任何连接请求之前，OkHttp总是调用代理身份验证器，以便它可以准备抢先认证
+internal var authenticator: Authenticator = Authenticator.NONE
+//是否重定向
+internal var followRedirects = true
+//ssl是否重定向
+internal var followSslRedirects = true
+//提供cookie的持久化策略
+internal var cookieJar: CookieJar = CookieJar.NO_COOKIES
+//response文件缓存
+internal var cache: Cache? = null
+//dns设置
+internal var dns: Dns = Dns.SYSTEM
+//代理设置
+internal var proxy: Proxy? = null
+//代理选择器
+internal var proxySelector: ProxySelector? = null
+//代理ip的一个属性
+internal var proxyAuthenticator: Authenticator = Authenticator.NONE
+//socket工厂 
+internal var socketFactory: SocketFactory = SocketFactory.getDefault()
+//sslSocket工厂
+internal var sslSocketFactoryOrNull: SSLSocketFactory? = null
+//证书信任管理器，可用于验证安全的远程端
+internal var x509TrustManagerOrNull: X509TrustManager? = null
+//连接说明，建立SSL/TLS连接时会使用，其中包含支持的TLS版本以及加密套件等
+internal var connectionSpecs: List&lt;ConnectionSpec&gt; = DEFAULT_CONNECTION_SPECS
+//连接时选择的协议 HTTP_1_0、HTTP_1_1、HTTP_2等
+internal var protocols: List&lt;Protocol&gt; = DEFAULT_PROTOCOLS
+//域名验证，用来校验请求域名与服务端返回的证书中的域名是否匹配
+internal var hostnameVerifier: HostnameVerifier = OkHostnameVerifier
+//设置信任指定的证书
+internal var certificatePinner: CertificatePinner = CertificatePinner.DEFAULT
+//证书链的清除器
+internal var certificateChainCleaner: CertificateChainCleaner? = null
+//调用超时时间
+internal var callTimeout = 0
+//连接超时时间
+internal var connectTimeout = 10_000
+//读取超时时间
+internal var readTimeout = 10_000
+//写入超时时间
+internal var writeTimeout = 10_000
+//ping的间隔
+internal var pingInterval = 0
+//WebSocket被压缩的最小消息大小
+internal var minWebSocketMessageToCompress = RealWebSocket.DEFAULT_MINIMUM_DEFLATE_SIZE
+//路由数据库
+internal var routeDatabase: RouteDatabase? = null</code></pre><p>&emsp;&emsp;上文已经说到OkHttpClient采用构建者模式构建，我们将里面详细的参数都做了一个说明。在读源码的过程中，我也看了OkHttpClient的类注释，我们再使用的过程中，最好创建一个单例的client实例，因为每个client都会持有它自己的连接池和线程池，重用连接和线程可以减少延迟并节省内存消耗。</p>
 <hr>
-<h2 id="五-插件具体方法介绍"><a href="#五-插件具体方法介绍" class="headerlink" title="五.插件具体方法介绍"></a>五.插件具体方法介绍</h2><ul>
-<li>TrackTransform中的transform方法，针对当前项目中的目录和jar遍历，然后将输入文件拷贝到输出目录</li>
-</ul>
-<pre><code>@Override
-void transform(Context context, Collection&lt;TransformInput&gt; inputs, Collection&lt;TransformInput&gt; referencedInputs, TransformOutputProvider outputProvider, boolean isIncremental) throws IOException, TransformException, InterruptedException {
-    if (!incremental) {
-        outputProvider.deleteAll()
+<h2 id="三-request的构建细节"><a href="#三-request的构建细节" class="headerlink" title="三.request的构建细节"></a>三.request的构建细节</h2><pre><code>//请求的链接
+internal var url: HttpUrl? = null
+//请求的方法，post、get、delete等
+internal var method: String
+//请求中的头文件
+internal var headers: Headers.Builder
+//请求体
+internal var body: RequestBody? = null</code></pre><p>&emsp;&emsp;reques顾名思义就是请求的意思，上述参数包含了一个网络请求的一些基本要素</p>
+<hr>
+<h2 id="四-newCall创建Call对象"><a href="#四-newCall创建Call对象" class="headerlink" title="四.newCall创建Call对象"></a>四.newCall创建Call对象</h2><pre><code>//OkHttpClient
+override fun newCall(request: Request): Call = RealCall(this, request, forWebSocket = false)
+//RealCall
+class RealCall(
+    val client: OkHttpClient,
+    /** The application&apos;s original request unadulterated by redirects or auth headers. */
+    val originalRequest: Request,
+    val forWebSocket: Boolean
+) : Call {
+    ...
+}</code></pre><p><br>&emsp;&emsp;创建client之后，我们通过newCall方法传入一个Request 构造出一个Call对象，在源码中我们发现newCall实际上是调用了RealCall(this, request, forWebSocket=false).第三个参数是代表不支持webSocket，原因是本身是http请求，而RealCall则是实现了call接口。</p>
+<hr>
+<h2 id="五-发起网络请求"><a href="#五-发起网络请求" class="headerlink" title="五.发起网络请求"></a>五.发起网络请求</h2><p>&emsp;&emsp;上文我们已经讲述了client，request以及call对象的构建，在讲述网络请求源码前，首先上一张图帮大家梳理一下思路。<br><br><img src="https://i.ibb.co/HtSx5YL/okhttp.png" alt="class"><br><br>&emsp;&emsp;接下来我就会从请求出发，深入源码给大家分析一下</p>
+<h3 id="同步请求流程"><a href="#同步请求流程" class="headerlink" title="同步请求流程"></a>同步请求流程</h3><pre><code>override fun execute(): Response {
+    synchronized(this) {
+       check(!executed) { &quot;Already Executed&quot; }
+       executed = true
     }
-    /**Transform 的 inputs 有两种类型，一种是目录，一种是 jar 包，要分开遍历 */
-    inputs.each { TransformInput input -&gt;
-        /**遍历目录*/
-        input.directoryInputs.each { DirectoryInput directoryInput -&gt;
-            /**当前这个 Transform 输出目录*/
-            File dest = outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
-            File dir = directoryInput.file
-            if (dir) {
-                HashMap&lt;String, File&gt; modifyMap = new HashMap&lt;&gt;()
-                /**遍历以某一扩展名结尾的文件*/
-                dir.traverse(type: FileType.FILES, nameFilter: ~/.*\.class/) {
-                    File classFile -&gt;
-                        if (TrackModifier.isShouldModify(classFile.name)) {
-                            File modified = TrackModifier.modifyClassFile(dir, classFile, context.getTemporaryDir())
-                            if (modified != null) {
-                                /**key 为包名 + 类名，如：/cn/sensorsdata/autotrack/android/app/MainActivity.class*/
-                                String ke = classFile.absolutePath.replace(dir.absolutePath, &quot;&quot;)
-                                modifyMap.put(ke, modified)
-                            }
-                        }
-                }
-                FileUtils.copyDirectory(directoryInput.file, dest)
-                modifyMap.entrySet().each {
-                    Map.Entry&lt;String, File&gt; en -&gt;
-                        File target = new File(dest.absolutePath + en.getKey())
-                        if (target.exists()) {
-                            target.delete()
-                        }
-                        FileUtils.copyFile(en.getValue(), target)
-                        en.getValue().delete()
-                }
-            }
-        }
-        /**遍历 jar*/
-        input.jarInputs.each { JarInput jarInput -&gt;
-            String destName = jarInput.file.name
-            System.out.println(&quot;destName:&quot;+ jarInput.file.absolutePath)
-            /**截取文件路径的 md5 值重命名输出文件,因为可能同名,会覆盖*/
-            def hexName = DigestUtils.md5Hex(jarInput.file.absolutePath).substring(0, 8)
-            /** 获取 jar 名字*/
-            if (destName.endsWith(&quot;.jar&quot;)) {
-                destName = destName.substring(0, destName.length() - 4)
-            }
-
-            /** 获得输出文件*/
-            File dest = outputProvider.getContentLocation(destName + &quot;_&quot; + hexName, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-            def modifiedJar = null
-            if (!destName.contains(&quot;asm-&quot;)) {
-                modifiedJar = TrackModifier.modifyJar(jarInput.file, context.getTemporaryDir(), true)
-            }
-            if (modifiedJar == null) {
-                modifiedJar = jarInput.file
-            }
-            FileUtils.copyFile(modifiedJar, dest)
-        }
+    timeout.enter()
+    callStart()
+    try {
+        client.dispatcher.executed(this)
+        return getResponseWithInterceptorChain()
+    } finally {
+        client.dispatcher.finished(this)
     }
-}</code></pre><ul>
-<li>TrackClassVisitor中的visitMethod方法，根据实际的需求进行条件判断，只要满足我们特定条件的类，我们才会去修改它的方法。比如，我们要自动采集Button的点击事件，那么只有实现了 View$OnClickListener接口的类，我们才会去遍历它的方法并找到 onClick(view) 方法，然后进行修改操作</li>
-</ul>
-<pre><code>@Override
-MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    MethodVisitor methodVisitor = super.visitMethod(access, name, desc, signature, exceptions)
-
-    String nameDesc = name + desc
-
-    methodVisitor = new TrackDefaultMethodVisitor(methodVisitor, access, name, desc) {
-        boolean isSensorsDataTrackViewOnClickAnnotation = false
-
-        @Override
-        protected void onMethodEnter() {
-            super.onMethodEnter()
-            if (nameDesc == &apos;onContextItemSelected(Landroid/view/MenuItem;)Z&apos; ||
-                    nameDesc == &apos;onOptionsItemSelected(Landroid/view/MenuItem;)Z&apos;) {
-                methodVisitor.visitVarInsn(ALOAD, 0)
-                methodVisitor.visitVarInsn(ALOAD, 1)
-                methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Ljava/lang/Object;Landroid/view/MenuItem;)V&quot;, false)
-            }
-
-            if ((mInterfaces != null &amp;&amp; mInterfaces.length &gt; 0) || isSensorsDataTrackViewOnClickAnnotation) {
-                if ((mInterfaces.contains(&apos;android/view/View$OnClickListener&apos;) &amp;&amp; nameDesc == &apos;onClick(Landroid/view/View;)V&apos;) /*||
-                        desc == &apos;(Landroid/view/View;)V&apos;*/) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/view/View;)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/content/DialogInterface$OnClickListener&apos;) &amp;&amp; nameDesc == &apos;onClick(Landroid/content/DialogInterface;I)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ILOAD, 2)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/content/DialogInterface;I)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/content/DialogInterface$OnMultiChoiceClickListener&apos;) &amp;&amp; nameDesc == &apos;onClick(Landroid/content/DialogInterface;IZ)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ILOAD, 2)
-                    methodVisitor.visitVarInsn(ILOAD, 3)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/content/DialogInterface;IZ)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/CompoundButton$OnCheckedChangeListener&apos;) &amp;&amp; nameDesc == &apos;onCheckedChanged(Landroid/widget/CompoundButton;Z)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ILOAD, 2)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/widget/CompoundButton;Z)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/RatingBar$OnRatingBarChangeListener&apos;) &amp;&amp; nameDesc == &apos;onRatingChanged(Landroid/widget/RatingBar;FZ)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/view/View;)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/SeekBar$OnSeekBarChangeListener&apos;) &amp;&amp; nameDesc == &apos;onStopTrackingTouch(Landroid/widget/SeekBar;)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/view/View;)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/AdapterView$OnItemSelectedListener&apos;) &amp;&amp; nameDesc == &apos;onItemSelected(Landroid/widget/AdapterView;Landroid/view/View;IJ)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ALOAD, 2)
-                    methodVisitor.visitVarInsn(ILOAD, 3)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/widget/AdapterView;Landroid/view/View;I)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/TabHost$OnTabChangeListener&apos;) &amp;&amp; nameDesc == &apos;onTabChanged(Ljava/lang/String;)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackTabHost&quot;, &quot;(Ljava/lang/String;)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/AdapterView$OnItemClickListener&apos;) &amp;&amp; nameDesc == &apos;onItemClick(Landroid/widget/AdapterView;Landroid/view/View;IJ)V&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ALOAD, 2)
-                    methodVisitor.visitVarInsn(ILOAD, 3)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackViewOnClick&quot;, &quot;(Landroid/widget/AdapterView;Landroid/view/View;I)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/ExpandableListView$OnGroupClickListener&apos;) &amp;&amp; nameDesc == &apos;onGroupClick(Landroid/widget/ExpandableListView;Landroid/view/View;IJ)Z&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ALOAD, 2)
-                    methodVisitor.visitVarInsn(ILOAD, 3)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackExpandableListViewGroupOnClick&quot;, &quot;(Landroid/widget/ExpandableListView;Landroid/view/View;I)V&quot;, false)
-                } else if (mInterfaces.contains(&apos;android/widget/ExpandableListView$OnChildClickListener&apos;) &amp;&amp; nameDesc == &apos;onChildClick(Landroid/widget/ExpandableListView;Landroid/view/View;IIJ)Z&apos;) {
-                    methodVisitor.visitVarInsn(ALOAD, 1)
-                    methodVisitor.visitVarInsn(ALOAD, 2)
-                    methodVisitor.visitVarInsn(ILOAD, 3)
-                    methodVisitor.visitVarInsn(ILOAD, 4)
-                    methodVisitor.visitMethodInsn(INVOKESTATIC, SDK_API_CLASS, &quot;trackExpandableListViewChildOnClick&quot;, &quot;(Landroid/widget/ExpandableListView;Landroid/view/View;II)V&quot;, false)
-                }
-            }
-        }
-
-        @Override
-        AnnotationVisitor visitAnnotation(String s, boolean b) {
-            if (s == &apos;Lnet/changjinglu/lutrack/autotrack/TrackViewOnClick;&apos;) {
-                isSensorsDataTrackViewOnClickAnnotation = true
-            }
-
-
-            return super.visitAnnotation(s, b)
-        }
+}</code></pre><p>&emsp;&emsp;我们可以看到，使用同步锁保证每个请求只能执行一次，然后调用dispatcher的executed方法，进入执行状态，最后通过一系列的拦截器返回最终的Response。我们看一下getResponseWithInterceptorChain()方法</p>
+<pre><code>@Throws(IOException::class)
+internal fun getResponseWithInterceptorChain(): Response {
+    //构建拦截器集合
+    val interceptors = mutableListOf&lt;Interceptor&gt;()
+    interceptors += client.interceptors
+    //管理重试和重定向的拦截器
+    interceptors += RetryAndFollowUpInterceptor(client)
+    //桥梁拦截器：在请求中添加网络层的参数，调用网络，解析出用户请求的结果
+    interceptors += BridgeInterceptor(client.cookieJar)
+    //缓存拦截器：读取缓存，更新缓存
+    interceptors += CacheInterceptor(client.cache)
+    //连接拦截器
+    interceptors += ConnectInterceptor
+    if (!forWebSocket) {
+        //网络拦截器（只在不是WebSocket的情况添加）
+        interceptors += client.networkInterceptors
     }
-    return methodVisitor
-}</code></pre><hr>
-<h2 id="六-无痕埋点实现过程遇到的问题"><a href="#六-无痕埋点实现过程遇到的问题" class="headerlink" title="六.无痕埋点实现过程遇到的问题"></a>六.无痕埋点实现过程遇到的问题</h2><ul>
-<li>1.ASM方案目前不支持lambda表达式,其余各类点击事件的实现均支持，已测试通过</li>
-<li>2.插件编译 是在Android App 打包成 .dex 文件之前的编译过程中操作 .class 文件。所以测试时会导致编译时间过长，目前已初步添加gradle编译优化，减少编译时间</li>
-<li>3.我们lib中原本针对多次点击使用aspectJ封装了一个多次点击的库。此次上层集成无痕埋点库时，发现singleClick会生成多个空的jar,导致埋点编译失败，后续需要将singleClick也使用ASM方式实现</li>
-</ul>
-<p><img src="https://s.changjinglu.net/uploads/b5e32a5ae3badce8f878bfa2a953c740.jpeg" alt="class"></p>
+    //服务请求拦截器
+    interceptors += CallServerInterceptor(forWebSocket)
+
+    ...
+
+    var calledNoMoreExchanges = false
+    try {
+        val response = chain.proceed(originalRequest)
+        ...
+    }
+}
+
+@Throws(IOException::class)
+override fun proceed(request: Request): Response {
+    check(index &lt; interceptors.size)
+    ...
+
+    // Call the next interceptor in the chain.
+    val next = copy(index = index + 1, request = request)
+   //获取当前的拦截器
+   val interceptor = interceptors[index]
+
+   @Suppress(&quot;USELESS_ELVIS&quot;)
+   //获取到response
+    val response = interceptor.intercept(next) ?: throw NullPointerException(
+       &quot;interceptor $interceptor returned null&quot;)
+
+    if (exchange != null) {
+       check(index + 1 &gt;= interceptors.size || next.calls == 1) {
+       &quot;network interceptor $interceptor must call proceed() exactly once&quot;
+       }
+    }
+
+   check(response.body != null) { &quot;interceptor $interceptor returned a response with no body&quot; }
+
+   return response
+}</code></pre><p>&emsp;&emsp;getResponseWithInterceptorChain()方法，我们简单看了一下，我只贴出了重要的代码，我们可以看到它内部是通过责任链的模式调用拦截器，简单总结一下：</p>
 <ul>
-<li>4.关于view的唯一标识，其实并没有一个很好的解决方案。常用的方案也是ViewPath，但也会有一系列的兼容性问题，比如同一个控件，不同的系统版本、不同的ROM、不同的App版本，都有可能发生变化。届时需要针对我们目前的各种板子做一个调试，否则item_id的实现就没有意义</li>
+<li>创建interceptors拦截器集合</li>
+<li>往集合中添加自定义的拦截器以及内置拦截器</li>
+<li>通过proceed方法获取到response</li>
 </ul>
+<h3 id="异步请求流程"><a href="#异步请求流程" class="headerlink" title="异步请求流程"></a>异步请求流程</h3><pre><code>//RealCall
+override fun enqueue(responseCallback: Callback) {
+    synchronized(this) {
+        check(!executed) { &quot;Already Executed&quot; }
+        executed = true
+    }
+    callStart()
+    client.dispatcher.enqueue(AsyncCall(responseCallback))
+}
+//Dispatcher
+internal fun enqueue(call: AsyncCall) {
+    synchronized(this) {
+        readyAsyncCalls.add(call)
+
+        if (!call.call.forWebSocket) {
+            val existingCall = findExistingCallWithHost(call.host)
+            if (existingCall != null) call.reuseCallsPerHostFrom(existingCall)
+        }
+    }
+    promoteAndExecute()
+}</code></pre><p>&emsp;&emsp;在RealCall中依旧是一个同步锁保证网络请求的唯一性，最后会调用Dispatcher中的enqueue方法。在Dispatcher中首先会将call添加到readyAsyncCalls集合这是一个异步请求等待队列；然后调用promoteAndExecute(),所以继续看下去。</p>
+<pre><code>private fun promoteAndExecute(): Boolean {
+this.assertThreadDoesntHoldLock()
+
+val executableCalls = mutableListOf&lt;AsyncCall&gt;()
+val isRunning: Boolean
+    synchronized(this) {
+        val i = readyAsyncCalls.iterator()
+        //循环获取到当前的请求任务
+        while (i.hasNext()) {
+            val asyncCall = i.next()
+            //判断是否超过最大数量
+            if (runningAsyncCalls.size &gt;= this.maxRequests) break // Max capacity.
+            if (asyncCall.callsPerHost.get() &gt;= this.maxRequestsPerHost) continue // Host max capacity.
+
+            i.remove()
+            asyncCall.callsPerHost.incrementAndGet()
+            //将请求任务添加到executableCalls
+            executableCalls.add(asyncCall)
+             //将请求任务添加到异步请求集合中
+            runningAsyncCalls.add(asyncCall)
+        } 
+        isRunning = runningCallsCount() &gt; 0
+    }  
+   //通过遍历，调用executeOn()
+   for (i in 0 until executableCalls.size) {
+        val asyncCall = executableCalls[i]
+        asyncCall.executeOn(executorService)
+    }
+    return isRunning
+}
+
+fun executeOn(executorService: ExecutorService) {
+    client.dispatcher.assertThreadDoesntHoldLock()
+
+    var success = false
+    try {
+        //通过executorService的execute()方法来执行异步请求
+        executorService.execute(this)
+        success = true
+    } catch (e: RejectedExecutionException) {
+        val ioException = InterruptedIOException(&quot;executor rejected&quot;)
+        ioException.initCause(e)
+        noMoreExchanges(ioException)
+        responseCallback.onFailure(this@RealCall, ioException)
+    } finally {
+        if (!success) {
+            //异常处理
+            client.dispatcher.finished(this) // This call is no longer running!
+        }
+    }
+}</code></pre><p>&emsp;&emsp;异步请求的相关解释，就看我在源码中的注释吧，他最终也会调用execute()方法，相比同步请求，异步请求添加了异步请求队列，同时也利用线程池来执行call,还添加了一个<br>Dispatcher用于管理异步请求啥时候执行。</p>
 <hr>
-<h2 id="七-无痕埋点需要考虑的点"><a href="#七-无痕埋点需要考虑的点" class="headerlink" title="七.无痕埋点需要考虑的点"></a>七.无痕埋点需要考虑的点</h2><ul>
-<li>1.无痕埋点的覆盖范围，是否覆盖应用中所有控件的监听</li>
-<li>2.覆盖监听的控件的无痕埋点上传方式需要和数据部门同步<ul>
-<li>实时上传</li>
-<li>统计到一定时间或者一定数量上传</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="八-无痕埋点和传统埋点的对比"><a href="#八-无痕埋点和传统埋点的对比" class="headerlink" title="八.无痕埋点和传统埋点的对比"></a>八.无痕埋点和传统埋点的对比</h2><ul>
-<li>1.传统代码埋点<ul>
-<li>实现方案：Coding阶段手动埋点</li>
-<li>优点：灵活、准确，可以定制化</li>
-<li>缺点：业务埋点量非常大，开发成本高，不易维护，如果要修改、新增埋点，需要重新发版</li>
-</ul>
-</li>
-<li>2.无痕埋点<ul>
-<li>实现方案：利用Gradle插件，在编译阶段在代码中插入埋点代码，进行数据采集</li>
-<li>优点：开发效率高，无需手动埋点，编译时插入代码，性能高</li>
-<li>缺点：埋点灵活性低</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h2 id="九-问题解决记录"><a href="#九-问题解决记录" class="headerlink" title="九.问题解决记录"></a>九.问题解决记录</h2><ul>
-<li>1.ASM插桩和aspectJ的冲突<br> <br/>解决方法是：缩小aspectJ的编译覆盖范围。以后在上层应用中如果添加一个新的module,不涉及到ui点击方面的话，可以将类名添加至gradle中，这样就不会被aspectJ重新编译，也能加快编译速度<br><img src="https://s.changjinglu.net/uploads/d427ca57383d9c5422a26d8b114d9162.jpeg" alt="class"></li>
-</ul>
+<h2 id="六-总结"><a href="#六-总结" class="headerlink" title="六.总结"></a>六.总结</h2><p>&emsp;&emsp;本篇文章是okhttp系列的第一篇，主要针对请求的基础对象做了一个介绍，以及同步异步流程的分析。通过源码的学习，我们也可以了解很多知识，okhttp的责任链模式管理拦截器值得大家深入了解的，后面的文章我也会从拦截器着手了。</p>
 
       
 
@@ -407,11 +428,7 @@ MethodVisitor visitMethod(int access, String name, String desc, String signature
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">无痕埋点</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ASM</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
         		</li>
       		
 		</ul>
@@ -430,15 +447,11 @@ MethodVisitor visitMethod(int access, String name, String desc, String signature
   
 <nav id="article-nav">
   
-    <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          插件化之Classloader类加载（一）
-        
-      </div>
-    </a>
   
+    <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">eventbus源码分析之post,postSticky流程分析（三）</div>
+      <i class="icon-circle-right"></i>
+    </a>
   
 </nav>
 
