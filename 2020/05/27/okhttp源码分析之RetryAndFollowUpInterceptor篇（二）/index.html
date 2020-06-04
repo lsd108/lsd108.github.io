@@ -6,18 +6,18 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>eventbus源码分析之register，unregister流程分析（二） | Lsd&#39;s blog</title>
+  <title>okhttp源码分析之RetryAndFollowUpInterceptor篇（二） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;这一篇博文是eventbus系列的第二篇，主要会针对eventbus的register注册，unregister解除注册的流程进行分析  二.eventbus的register注册订阅&amp;emsp;&amp;emsp;获取到EventBus对象后，调用它的register方法，将我们的订阅者注册进去。订阅者需要在其方法上添加@Subscribe注解，首先我们看看这个注解">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;从前面的文章我们可以知道，OKHttp帮我们默认做了五步拦截处理，今天我们就针对RetryAndFollowUpInterceptor这个拦截器做一个分析  二.作用&amp;emsp;&amp;emsp;顾名思义，RetryAndFollowUpInterceptor是一个负责失败重连的拦截器，在网络请求的过程中，若我们想实现失败重连，就需要在OkHttpClient进行配置。但">
 <meta property="og:type" content="article">
-<meta property="og:title" content="eventbus源码分析之register，unregister流程分析（二）">
-<meta property="og:url" content="http://yoursite.com/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
+<meta property="og:title" content="okhttp源码分析之RetryAndFollowUpInterceptor篇（二）">
+<meta property="og:url" content="http://yoursite.com/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;这一篇博文是eventbus系列的第二篇，主要会针对eventbus的register注册，unregister解除注册的流程进行分析  二.eventbus的register注册订阅&amp;emsp;&amp;emsp;获取到EventBus对象后，调用它的register方法，将我们的订阅者注册进去。订阅者需要在其方法上添加@Subscribe注解，首先我们看看这个注解">
-<meta property="article:published_time" content="2020-02-21T11:08:29.000Z">
-<meta property="article:modified_time" content="2020-04-01T04:52:32.804Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;从前面的文章我们可以知道，OKHttp帮我们默认做了五步拦截处理，今天我们就针对RetryAndFollowUpInterceptor这个拦截器做一个分析  二.作用&amp;emsp;&amp;emsp;顾名思义，RetryAndFollowUpInterceptor是一个负责失败重连的拦截器，在网络请求的过程中，若我们想实现失败重连，就需要在OkHttpClient进行配置。但">
+<meta property="article:published_time" content="2020-05-27T11:29:20.000Z">
+<meta property="article:modified_time" content="2020-06-04T12:05:00.803Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="Eventbus">
+<meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
@@ -138,183 +138,159 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-eventbus源码分析之register，unregister流程分析（二）" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-okhttp源码分析之RetryAndFollowUpInterceptor篇（二）" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      eventbus源码分析之register，unregister流程分析（二）
+      okhttp源码分析之RetryAndFollowUpInterceptor篇（二）
     </h1>
   
 
         
-        <a href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-21T11:08:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-21</time>
+        <a href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-05-27T11:29:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-27</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;这一篇博文是eventbus系列的第二篇，主要会针对eventbus的register注册，unregister解除注册的流程进行分析</p>
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;从前面的文章我们可以知道，OKHttp帮我们默认做了五步拦截处理，今天我们就针对RetryAndFollowUpInterceptor这个拦截器做一个分析</p>
 <hr>
-<h2 id="二-eventbus的register注册订阅"><a href="#二-eventbus的register注册订阅" class="headerlink" title="二.eventbus的register注册订阅"></a>二.eventbus的register注册订阅</h2><p>&emsp;&emsp;获取到EventBus对象后，调用它的register方法，将我们的订阅者注册进去。订阅者需要在其方法上添加@Subscribe注解，首先我们看看这个注解</p>
-<a id="more"></a>   
-<pre><code>//使用
-@Subscribe(threadMode = ThreadMode.MAIN)
-public void onMessageEvent(MessageEvent event){
-    Log.i(TAG,&quot;received event：&quot;+event.msg);
-}
+<h2 id="二-作用"><a href="#二-作用" class="headerlink" title="二.作用"></a>二.作用</h2><p>&emsp;&emsp;顾名思义，RetryAndFollowUpInterceptor是一个负责失败重连的拦截器，在网络请求的过程中，若我们想实现失败重连，就需要在OkHttpClient进行配置。但是我们需要注意的是请求失败被取消有可能会抛出io异常。我们依旧从源码出发，进行分析</p>
+<a id="more"></a>
 
-//源码
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface Subscribe {
-    //设置调用订阅方法时的线程类型
-    ThreadMode threadMode() default ThreadMode.POSTING;
-    //是否是粘性事件 
-    boolean sticky() default false;
-    //事件优先级，在相同threadMode中，优先级高的会优先接收到事件
-    int priority() default 0;
-}</code></pre><p>&emsp;&emsp;接下来我们来看看register方法</p>
-<pre><code>public void register(Object subscriber) {
-    //获取订阅者的class类型
-    Class&lt;?&gt; subscriberClass = subscriber.getClass();
-    //查找获取该类中的所有订阅方法
-    List&lt;SubscriberMethod&gt; subscriberMethods = subscriberMethodFinder.findSubscriberMethods(subscriberClass);
-    synchronized (this) {
-        //将订阅者和订阅方法缓存起来
-        for (SubscriberMethod subscriberMethod : subscriberMethods) {
-            subscribe(subscriber, subscriberMethod);
-        }
-    }
-}</code></pre><p>&emsp;&emsp;我们看到这个register方法，它首先获取订阅者的class对象，然后通过subscriberMethodFinder方法查找这个class对象的所有订阅方法集合SubscriberMethod，在SubscriberMethod中包含了对应的线程、Method对象、事件类型、事件优先级以及是否是粘性事件等相关参数，最后通过subscribe(subscriber, subscriberMethod)方法订阅事件。<br><br>&emsp;&emsp;我们先从findSubscriberMethods方法着手分析</p>
-<h3 id="findSubscriberMethods"><a href="#findSubscriberMethods" class="headerlink" title="findSubscriberMethods"></a>findSubscriberMethods</h3><pre><code>List&lt;SubscriberMethod&gt; findSubscriberMethods(Class&lt;?&gt; subscriberClass) {
-    //METHOD_CACHE是一个ConcurrentHashMap，可以通过它获取类中的订阅方法列表
-    List&lt;SubscriberMethod&gt; subscriberMethods = METHOD_CACHE.get(subscriberClass);
-    if (subscriberMethods != null) {
-        return subscriberMethods;
-    }
-    //判断是否忽略已生成的索引类，默认为false
-    if (ignoreGeneratedIndex) {
-        //通过反射查找订阅方法
-        subscriberMethods = findUsingReflection(subscriberClass);
-    } else {
-        //通过运行时注解生成的类来获取订阅方法
-        subscriberMethods = findUsingInfo(subscriberClass);
-    }
-    if (subscriberMethods.isEmpty()) {
-        throw new EventBusException(&quot;Subscriber &quot; + subscriberClass
-                + &quot; and its super classes have no public methods with the @Subscribe annotation&quot;);
-    } else {
-        METHOD_CACHE.put(subscriberClass, subscriberMethods);
-        return subscriberMethods;
-    }
-}</code></pre><p><br>&emsp;&emsp;findSubscriberMethods方法会从METHOD_CACHE中获取类中的订阅方法列表，然后会判断是否忽略已生成的索引类，如果忽略，则调用findUsingReflection反射查找订阅方法；如果不忽略，则调用findUsingInfo通过运行时注解生成的类来获取订阅方法。<br><br>&emsp;&emsp;接下来我们再看看subscribe方法</p>
-<h3 id="subscribe"><a href="#subscribe" class="headerlink" title="subscribe"></a>subscribe</h3><pre><code>private void subscribe(Object subscriber, SubscriberMethod subscriberMethod) {
-    //获取订阅方法的事件类型
-    Class&lt;?&gt; eventType = subscriberMethod.eventType;
-    Subscription newSubscription = new Subscription(subscriber, subscriberMethod);
-    CopyOnWriteArrayList&lt;Subscription&gt; subscriptions = subscriptionsByEventType.get(eventType);
-    //判断subscriptionsByEventType中是否已添加过该Subscription
-    if (subscriptions == null) {
-        subscriptions = new CopyOnWriteArrayList&lt;&gt;();
-        subscriptionsByEventType.put(eventType, subscriptions);
-    } else {
-        //如果contains，就抛出异常
-        if (subscriptions.contains(newSubscription)) {
-            throw new EventBusException(&quot;Subscriber &quot; + subscriber.getClass() + &quot; already registered to event &quot;
-                    + eventType);
-        }
-    }
-    //根据优先级priority来添加Subscription对象
-    int size = subscriptions.size();
-    for (int i = 0; i &lt;= size; i++) {
-        if (i == size || subscriberMethod.priority &gt; subscriptions.get(i).subscriberMethod.priority) {
-            subscriptions.add(i, newSubscription);
-            break;
-        }
-    }
-    //通过typesBySubscriber，获取事件参数类型列表。
-    //typesBySubscriber是一个HashMap，订阅者类为key，事件参数类型列表为value
-    List&lt;Class&lt;?&gt;&gt; subscribedEvents = typesBySubscriber.get(subscriber);
-    if (subscribedEvents == null) {
-        subscribedEvents = new ArrayList&lt;&gt;();
-        typesBySubscriber.put(subscriber, subscribedEvents);
-    }
-    subscribedEvents.add(eventType);
-    //判断是否接收黏性事件
-    if (subscriberMethod.sticky) {
-        //是否支持事件继承
-        if (eventInheritance) {
-            Set&lt;Map.Entry&lt;Class&lt;?&gt;, Object&gt;&gt; entries = stickyEvents.entrySet();
-            for (Map.Entry&lt;Class&lt;?&gt;, Object&gt; entry : entries) {
-                Class&lt;?&gt; candidateEventType = entry.getKey();
-                if (eventType.isAssignableFrom(candidateEventType)) {
-                    Object stickyEvent = entry.getValue();
-                //将黏性事件分发给该订阅方法处理    checkPostStickyEventToSubscription(newSubscription, stickyEvent);
-                }
-            }
-        } else {
-           //从stickyEvents缓存的黏性事件容器取得事件，并分发给该订阅方法处理
-            Object stickyEvent = stickyEvents.get(eventType);
-            checkPostStickyEventToSubscription(newSubscription, stickyEvent);
-        }
-    }
-}
+<pre><code>@Throws(IOException::class)
+override fun intercept(chain: Interceptor.Chain): Response {
+val realChain = chain as RealInterceptorChain
+var request = chain.request
+val call = realChain.call
+var followUpCount = 0
+var priorResponse: Response? = null
+var newExchangeFinder = true
+var recoveredFailures = listOf&lt;IOException&gt;()
+while (true) {
+  call.enterNetworkInterceptorExchange(request, newExchangeFinder)
 
-private void checkPostStickyEventToSubscription(Subscription newSubscription, Object stickyEvent) {
-    if (stickyEvent != null) {
-        // If the subscriber is trying to abort the event, it will fail (event is not tracked in posting state)
-        // --&gt; Strange corner case, which we don&apos;t take care of here.
-        postToSubscription(newSubscription, stickyEvent, isMainThread());
+  var response: Response
+  var closeActiveExchange = true
+  try {
+    if (call.isCanceled()) {
+      throw IOException(&quot;Canceled&quot;)
     }
-}</code></pre><p><br>&emsp;&emsp;以上就是subscribe的细节分析。首先subscriberMethod获取订阅方法的事件类型，然后将SubscriberMethod对应放进subscriptionsByEventType容器中保存，将事件参数类型放进typesBySubscriber容器中保存，最后判断SubscriberMethod的method是否接收黏性事件，最终调用postToSubscription做分发处理。</p>
-<hr>
-<h2 id="三-eventbus的unregister取消注册订阅"><a href="#三-eventbus的unregister取消注册订阅" class="headerlink" title="三.eventbus的unregister取消注册订阅"></a>三.eventbus的unregister取消注册订阅</h2><p><br>&emsp;&emsp;分析完register方法，接下来我们看看unregister做了哪些操作，老规矩直接上源码</p>
-<pre><code>public synchronized void unregister(Object subscriber) {
-    //从typesBySubscriber中取出订阅者类中的事件类型集合
-    List&lt;Class&lt;?&gt;&gt; subscribedTypes = typesBySubscriber.get(subscriber);
-    //判断该订阅者是否是注册过的
-    if (subscribedTypes != null) {
-        for (Class&lt;?&gt; eventType : subscribedTypes) {
-           //释放资源，移除订阅信息 unsubscribeByEventType(subscriber, eventType);
-        }
-        //移除订阅者 
-        typesBySubscriber.remove(subscriber);
-    } else {
-        logger.log(Level.WARNING, &quot;Subscriber to unregister was not registered before: &quot; + subscriber.getClass());
-    }
-}
 
-private void unsubscribeByEventType(Object subscriber, Class&lt;?&gt; eventType) {
-    //通过subscriptionsByEventType事件参数类型获取Subscription集合
-    List&lt;Subscription&gt; subscriptions = subscriptionsByEventType.get(eventType);
-    if (subscriptions != null) {
-        int size = subscriptions.size();
-        //通过循环不断remove
-        for (int i = 0; i &lt; size; i++) {
-            Subscription subscription = subscriptions.get(i);
-            if (subscription.subscriber == subscriber) {
-                subscription.active = false;
-                subscriptions.remove(i);
-                i--;
-                size--;
-            }
-        }
+    try {
+      //调用realChain.proceed(request)进行网络请求
+      response = realChain.proceed(request)
+      newExchangeFinder = true
+    } catch (e: RouteException) {
+      // 如果通过路由连接失败，请求将不会被发送
+      if (!recover(e.lastConnectException, call, request, requestSendStarted = false)) {
+        throw e.firstConnectException.withSuppressed(recoveredFailures)
+      } else {
+        //可以重新连接，不要释放连接，在recoveredFailures集合中保存此异常
+        recoveredFailures += e.firstConnectException
+      }
+      newExchangeFinder = false
+      //保持continue，继续进行while循环，进行网络请求
+      continue
+    } catch (e: IOException) {
+      // 尝试与服务器通信失败，请求可能已发送
+      if (!recover(e, call, request, requestSendStarted = e !is ConnectionShutdownException)) {
+        throw e.withSuppressed(recoveredFailures)
+      } else {
+        //可以重新连接，不要释放连接
+        recoveredFailures += e
+      }
+      newExchangeFinder = false
+      //保持continue，继续进行while循环，进行网络请求
+      continue
     }
-}</code></pre><p><br>&emsp;&emsp;unregister就是从typesBySubscriber中移除订阅者类所有数据，首先根据subscriber订阅者类获取所使用到的eventType事件参数类型，然后获取Subscription集合，通过不断的循环遍历，将属于该订阅者类active参数设置为false，最后调用remove从缓存中移除。</p>
-<hr>
-<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p>&emsp;&emsp;至此，关于eventbus的register和unregister流程源码分析已完成，我们主要针对register进行一下总结：<br>register方法主要完成了一下几个步骤：</p>
+    ...
+    finally {
+      call.exitNetworkInterceptorExchange(closeActiveExchange)
+  }
+ }
+}</code></pre><p>&emsp;&emsp;上述intercept的源码截取了失败重连的部分，我们发现失败重连主要针对RouteException和IOException。简单总结如下：</p>
 <ul>
-<li>获取subscriber订阅者类的class对象</li>
-<li>通过subscriberMethodFinder方法，传入，class对象，查找获取对应的订阅者类的所有订阅方法SubscriberMethod</li>
-<li>调用subscribe方法执行订阅</li>
+<li>针对RouteException<ul>
+<li>调用recover()方法检测RouteException路由是否可以重新连接</li>
+<li>如果不能连接，抛出此异常</li>
+<li>如果可以连接，不要释放连接，在recoveredFailures集合中保存此异常（此异常是RouteException中的IOException）</li>
+<li>保持continue，继续进行while循环，进行网络请求</li>
 </ul>
-<p>&emsp;&emsp;写到这里，暂时告一段落，后面的文章，会围绕eventbus的post以及postSticky展开介绍，以上内容都是笔者在自己的理解，如果有不严谨或者失误的地方，还请指出。</p>
+</li>
+<li>针对IOException,和RouteException的整体流程一致,但是在保存异常时，是直接保存。从这里我们也可以知道为什么RetryAndFollowUpInterceptor连接失败后只会抛出io异常了</li>
+</ul>
+<hr>
+<h2 id="三-recover"><a href="#三-recover" class="headerlink" title="三.recover"></a>三.recover</h2><pre><code>private fun recover(
+  e: IOException,
+  call: RealCall,
+  userRequest: Request,
+  requestSendStarted: Boolean
+): Boolean {
+  // The application layer has forbidden retries.
+  //判断 OkHttpClient 是否支持失败重连的机制
+  if (!client.retryOnConnectionFailure) return false
+  // We can&apos;t send the request body again.
+  //判断当前的request是否已发送，保证唯一性
+  if (requestSendStarted &amp;&amp; requestIsOneShot(e, userRequest)) return false
+  // This exception is fatal.
+  //判断当前的异常是否无法挽回
+  if (!isRecoverable(e, requestSendStarted)) return false
+  // No more routes to attempt.
+  //判断是否有更多的路由路线
+  if (!call.retryAfterFailure()) return false
+  // For failure recovery, use the same route selector with a new connection.
+  return true
+}</code></pre><p>&emsp;&emsp;老规矩，针对recover来一个小结：</p>
+<ul>
+<li>首先判断 OkHttpClient 是否支持失败重连的机制</li>
+<li>判断当前的request是否已发送，保证唯一性</li>
+<li>调用isRecoverable，判断当前的异常是否无法挽回</li>
+<li>判断是否有更多的路由路线</li>
+</ul>
+<p>&emsp;&emsp;经过四重判断，来保证重连机制，后面我们针对isRecoverable方法看一看，okhttp到底将哪些异常视为无法挽回的</p>
+<hr>
+<h2 id="四-isRecoverable"><a href="#四-isRecoverable" class="headerlink" title="四.isRecoverable"></a>四.isRecoverable</h2><pre><code>private fun isRecoverable(e: IOException, requestSendStarted: Boolean): Boolean {
+    if (e is ProtocolException) {
+        return false
+    }
+    if (e is InterruptedIOException) {
+        return e is SocketTimeoutException &amp;&amp; !requestSendStarted
+    }
+    if (e is SSLHandshakeException) {
+        if (e.cause is CertificateException) {
+            return false
+        }
+    }
+    if (e is SSLPeerUnverifiedException) {
+        return false
+    }
+    return true
+}</code></pre><p>&emsp;&emsp;无法挽回的几类异常：</p>
+<ul>
+<li>ProtocolException是协议异常</li>
+<li>InterruptedIOException是IO中断异常</li>
+<li>SSLHandshakeException是ssl握手异常</li>
+<li>SSLPeerUnverifiedException是ssl证书校验异常</li>
+</ul>
+<hr>
+<h2 id="五-MAX-FOLLOW-UPS"><a href="#五-MAX-FOLLOW-UPS" class="headerlink" title="五.MAX_FOLLOW_UPS"></a>五.MAX_FOLLOW_UPS</h2><pre><code>if (++followUpCount &gt; MAX_FOLLOW_UPS) {
+    throw ProtocolException(&quot;Too many follow-up requests: $followUpCount&quot;)
+}
+private const val MAX_FOLLOW_UPS = 20</code></pre><p>&emsp;&emsp;在RetryAndFollowUpInterceptor中有一个MAX_FOLLOW_UPS常量，它表示该请求可以重试的次数，在okhttp中不能超过20次</p>
+<hr>
+<h2 id="六-总结"><a href="#六-总结" class="headerlink" title="六.总结"></a>六.总结</h2><p>&emsp;&emsp;本篇文章也只是读者根据自己的理解粗略的分析了一下重试拦截器，我们发现其实内部还有很多细小的逻辑我们没有看到。我们简单整理一下整体逻辑：</p>
+<ul>
+<li>首先调用realChain.proceed(request)进行网络请求</li>
+<li>判断RouteException和IOException是否可以调用recover重试</li>
+<li>判断异常类型是否可以挽回以及是否允许重试</li>
+<li>不可挽回抛出异常，可以挽回则在20次的请求重试范围内继续请求</li>
+</ul>
 
       
 
@@ -328,7 +304,7 @@ private void unsubscribeByEventType(Object subscriber, Class&lt;?&gt; eventType)
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
         		</li>
       		
 		</ul>
@@ -347,18 +323,9 @@ private void unsubscribeByEventType(Object subscriber, Class&lt;?&gt; eventType)
   
 <nav id="article-nav">
   
-    <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          eventbus源码分析之post,postSticky流程分析（三）
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">eventbus源码分析之Poster的深入理解（一）</div>
+    <a href="/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">okhttp源码分析之请求整体概述（一）</div>
       <i class="icon-circle-right"></i>
     </a>
   
