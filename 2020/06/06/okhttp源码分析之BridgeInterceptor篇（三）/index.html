@@ -6,22 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>插件化之四大组件activity的加载（二） | Lsd&#39;s blog</title>
+  <title>okhttp源码分析之BridgeInterceptor篇（三） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍  二.activity的启动流程 1.Context在调用startActivity后，实际上是ContextImpl的startActivity 2.内部会通过Instrumentation来尝试启动Activity 3.调用ams的star">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;本篇文章是okhttp源码分析系列的第三篇文章，本篇我们将针对BridgeInterceptor做一个分析  二.简介以及Request阶段属性说明&amp;emsp;&amp;emsp;BridgeInterceptor是应用程序到网络请求的一个桥梁，它构建来自用户的网络请求，然后继续呼叫网络，最终从网络中得到response。直接上源码：">
 <meta property="og:type" content="article">
-<meta property="og:title" content="插件化之四大组件activity的加载（二）">
-<meta property="og:url" content="http://yoursite.com/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
+<meta property="og:title" content="okhttp源码分析之BridgeInterceptor篇（三）">
+<meta property="og:url" content="http://yoursite.com/2020/06/06/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BBridgeInterceptor%E7%AF%87%EF%BC%88%E4%B8%89%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍  二.activity的启动流程 1.Context在调用startActivity后，实际上是ContextImpl的startActivity 2.内部会通过Instrumentation来尝试启动Activity 3.调用ams的star">
-<meta property="og:image" content="https://i.ibb.co/WymD7wm/8-0-hook.jpg">
-<meta property="article:published_time" content="2020-01-19T07:30:29.000Z">
-<meta property="article:modified_time" content="2020-05-18T07:01:47.843Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;本篇文章是okhttp源码分析系列的第三篇文章，本篇我们将针对BridgeInterceptor做一个分析  二.简介以及Request阶段属性说明&amp;emsp;&amp;emsp;BridgeInterceptor是应用程序到网络请求的一个桥梁，它构建来自用户的网络请求，然后继续呼叫网络，最终从网络中得到response。直接上源码：">
+<meta property="article:published_time" content="2020-06-06T06:55:20.000Z">
+<meta property="article:modified_time" content="2020-06-05T07:01:07.172Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="插件化">
-<meta property="article:tag" content="activity启动流程">
+<meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://i.ibb.co/WymD7wm/8-0-hook.jpg">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -141,59 +138,166 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-深入理解插件化之四大组件activity的加载（二）" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-okhttp源码分析之BridgeInterceptor篇（三）" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      插件化之四大组件activity的加载（二）
+      okhttp源码分析之BridgeInterceptor篇（三）
     </h1>
   
 
         
-        <a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
+        <a href="/2020/06/06/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BBridgeInterceptor%E7%AF%87%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-06-06T06:55:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-06</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍</p>
+        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;本篇文章是okhttp源码分析系列的第三篇文章，本篇我们将针对BridgeInterceptor做一个分析</p>
 <hr>
-<h2 id="二-activity的启动流程"><a href="#二-activity的启动流程" class="headerlink" title="二.activity的启动流程"></a>二.activity的启动流程</h2><ul>
-<li>1.Context在调用startActivity后，实际上是ContextImpl的startActivity</li>
-<li>2.内部会通过Instrumentation来尝试启动Activity</li>
-<li>3.调用ams的startActivity方法，实现跨进程通信</li>
-<li>4.ams校验完activity的合法性，通过ApplicationThread回调到我们的进程</li>
-<li>5.applicationThread就是一个binder，回调逻辑是在binder线程池中完成的，所以需要通过Handler将其切换到ui线程</li>
-<li>6.发送消息LAUNCH_ACTIVITY，它对应handleLaunchActivity，在此方法中完成Activity的创建和启动</li>
-</ul>
+<h2 id="二-简介以及Request阶段属性说明"><a href="#二-简介以及Request阶段属性说明" class="headerlink" title="二.简介以及Request阶段属性说明"></a>二.简介以及Request阶段属性说明</h2><p>&emsp;&emsp;BridgeInterceptor是应用程序到网络请求的一个桥梁，它构建来自用户的网络请求，然后继续呼叫网络，最终从网络中得到response。直接上源码：</p>
 <a id="more"></a>
+
+<pre><code>@Throws(IOException::class)
+override fun intercept(chain: Interceptor.Chain): Response {
+val userRequest = chain.request()
+val requestBuilder = userRequest.newBuilder()
+val body = userRequest.body
+//针对请求头补充相应的字段
+if (body != null) {
+  val contentType = body.contentType()
+  if (contentType != null) {
+    //Content-Type定义网络文件的类型和网页的编码
+    requestBuilder.header(&quot;Content-Type&quot;, contentType.toString())
+  }
+
+  val contentLength = body.contentLength()
+  if (contentLength != -1L) {
+    //Content-Length表明了实体主体部分的长度
+    requestBuilder.header(&quot;Content-Length&quot;, contentLength.toString())
+    requestBuilder.removeHeader(&quot;Transfer-Encoding&quot;)
+  } else {
+    //Transfer-Encoding规定了传输报文主体时采用的编码方式，chunked 表示请求体的内容大小是未知的
+    requestBuilder.header(&quot;Transfer-Encoding&quot;, &quot;chunked&quot;)
+    requestBuilder.removeHeader(&quot;Content-Length&quot;)
+  }
+}
+//Host将请求的资源所处的互联网主机名和端口号告知服务器
+if (userRequest.header(&quot;Host&quot;) == null) {
+  requestBuilder.header(&quot;Host&quot;, userRequest.url.toHostHeader())
+}
+//Connection就是tcp的长连接状态
+if (userRequest.header(&quot;Connection&quot;) == null) {
+  requestBuilder.header(&quot;Connection&quot;, &quot;Keep-Alive&quot;)
+}
+
+// If we add an &quot;Accept-Encoding: gzip&quot; header field we&apos;re responsible for also decompressing
+// the transfer stream.
+var transparentGzip = false
+//Accept-Encoding告知服务器支持的内容编码及内容编码的优先级顺序
+if (userRequest.header(&quot;Accept-Encoding&quot;) == null &amp;&amp; userRequest.header(&quot;Range&quot;) == null) {
+  transparentGzip = true
+  requestBuilder.header(&quot;Accept-Encoding&quot;, &quot;gzip&quot;)
+}
+//Cookie用于获取HTTP状态管理支持
+val cookies = cookieJar.loadForRequest(userRequest.url)
+if (cookies.isNotEmpty()) {
+  requestBuilder.header(&quot;Cookie&quot;, cookieHeader(cookies))
+}
+//User-Agent表示客户端的信息
+if (userRequest.header(&quot;User-Agent&quot;) == null) {
+  requestBuilder.header(&quot;User-Agent&quot;, userAgent)
+}
+
+....
+}</code></pre><p>&emsp;&emsp;我们再使用okhttp的过程中，构建一个request的对象只用设置一个url，RequestBody等属性。但是实际上在header中有很多属性在内部进行了封装，我在上述源码中已针对属性做了注释，下面我也整理一个表格方便观看</p>
+<table>
+<thead>
+<tr>
+<th>属性名</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Content-Type</td>
+<td>定义网络文件的类型和网页的编码，如果没有指定 ContentType，默认为[TEXT]/[HTML]</td>
+</tr>
+<tr>
+<td>Content-Length</td>
+<td>表明了实体主体部分的长度，与Transfer-Encoding互斥</td>
+</tr>
+<tr>
+<td>Transfer-Encoding</td>
+<td>规定了传输报文主体时采用的编码方式，chunked 表示请求体的内容大小是未知的</td>
+</tr>
+<tr>
+<td>Host</td>
+<td>将请求的资源所处的互联网主机名和端口号告知服务器</td>
+</tr>
+<tr>
+<td>Connection</td>
+<td>就是tcp的长连接状态，默认是”Keep-Alive”</td>
+</tr>
+<tr>
+<td>Accept-Encoding</td>
+<td>告知服务器支持的内容编码及内容编码的优先级顺序，默认是 “gzip”</td>
+</tr>
+<tr>
+<td>Cookie</td>
+<td>用于获取HTTP状态管理支持</td>
+</tr>
+<tr>
+<td>User-Agent</td>
+<td>表示客户端的信息</td>
+</tr>
+</tbody></table>
 <hr>
-<h2 id="三-加载插件activity的实现思路"><a href="#三-加载插件activity的实现思路" class="headerlink" title="三.加载插件activity的实现思路"></a>三.加载插件activity的实现思路</h2><p>&emsp;&emsp;首先我们在宿主里面创建一个 ProxyActivity 继承自 Activity，并且在清单中注册。当启动插件Activity 的时候，在系统检测前，找到一个Hook点，然后通过 Hook 将插件 Activity 替换成 ProxyActivity，等到检测完了后，再找一个Hook点，使用 Hook 将它们换回来，这样就实现了插件 Activity的加载。</p>
-<h4 id="8-0的第一个hook点"><a href="#8-0的第一个hook点" class="headerlink" title="8.0的第一个hook点"></a>8.0的第一个hook点</h4><p>&emsp;&emsp;在Android8.0的源码中IActivityManager借助了Singleton类实现单例，而且该单例是静态的，因此IActivityManager是一个比较好的Hook点。</p>
+<h2 id="三-Response阶段"><a href="#三-Response阶段" class="headerlink" title="三.Response阶段"></a>三.Response阶段</h2><pre><code>//通过proceed获取networkResponse
+val networkResponse = chain.proceed(requestBuilder.build())
+//保存相应的cookie
+cookieJar.receiveHeaders(userRequest.url, networkResponse.headers)
+val responseBuilder = networkResponse.newBuilder()
+    .request(userRequest)
+//判断服务器返回的数据是否是GZIP压缩的
+if (transparentGzip &amp;&amp;
+    &quot;gzip&quot;.equals(networkResponse.header(&quot;Content-Encoding&quot;), ignoreCase = true) &amp;&amp;
+    networkResponse.promisesBody()) {
+  val responseBody = networkResponse.body
+  if (responseBody != null) {
+    //通过GzipSource，将输入流BufferedSource 转化为GzipSource类型
+    val gzipSource = GzipSource(responseBody.source())
+    val strippedHeaders = networkResponse.headers.newBuilder()
+        .removeAll(&quot;Content-Encoding&quot;)
+        .removeAll(&quot;Content-Length&quot;)
+        .build()
+    responseBuilder.headers(strippedHeaders)
+    val contentType = networkResponse.header(&quot;Content-Type&quot;)
+    responseBuilder.body(RealResponseBody(contentType, -1L, gzipSource.buffer()))
+  }
+}
+
+return responseBuilder.build()</code></pre><p>&emsp;&emsp;简单来个小结：</p>
 <ul>
-<li>定义替换IActivityManager的代理类IActivityManagerProxy，由于Hook点IActivityManager是一个接口，建议这里采用动态代理<ul>
-<li>1.拦截startActivity方法，获取参数args中保存的Intent对象，它是原本要启动插件TargetActivity的Intent</li>
-<li>2.新建一个subIntent用来启动StubActivity，并将前面得到的TargetActivity的Intent保存到subIntent中，便于以后还原TargetActivity</li>
-<li>3.最后，将subIntent赋值给参数args，这样启动的目标就变为了StubActivity，用来通过AMS的校验</li>
+<li>网络请求在调用chain.proceed后即可得到networkResponse对象</li>
+<li>保存相应的cookie</li>
+<li>判断transparentGzip是否为true,即是判断Accept-Encoding是否支持gzip压缩</li>
+<li>判断服务器的响应头Content-Encoding是否也是gzip压缩</li>
+<li>判断networkResponse是否有响应体</li>
+<li>通过GzipSource，将输入流BufferedSource 转化为GzipSource类型</li>
+<li>返回responseBuilder.build()</li>
 </ul>
-</li>
-<li>然后，用代理类IActivityManagerProxy来替换IActivityManager<ul>
-<li>1.使用反射获取ActivityManager的IActivityManagerSingleton字段</li>
-<li>2.通过反射获取对应的Singleton实例，从上面得到的2个字段中拿到对应的IActivityManager</li>
-<li>3.最后，使用Proxy.newProxyInstance()方法动态创建代理类IActivityManagerProxy，用IActivityManagerProxy来替换IActivityManager<br><br/><img src="https://i.ibb.co/WymD7wm/8-0-hook.jpg" alt="class">  <h4 id="8-0的第二个hook点，还原插件的activity"><a href="#8-0的第二个hook点，还原插件的activity" class="headerlink" title="8.0的第二个hook点，还原插件的activity"></a>8.0的第二个hook点，还原插件的activity</h4></li>
-</ul>
-</li>
-</ul>
-<p>&emsp;&emsp;1.前面用占坑Activity通过了AMS的校验，但是我们要启动的是插件TargetActivity，还需要用插件TargetActivity来替换占坑的SubActivity，替换时机为图中步骤2之后</p>
-<p>&emsp;&emsp;2.在ActivityThread的H类中重写的handleMessage方法会对LAUNCH_ACTIVITY类型的消息进行处理，最终会调用Activity的onCreate方法。在Handler的dispatchMessage处理消息的这个方法中，看到如果Handelr的Callback类型的mCallBack不为null，就会执行mCallback的handleMessage方法，因此mCallback可以作为Hook点。我们可以用自定义的Callback来替换<br>mCallback</p>
-<p>&emsp;&emsp;自定义的Callback实现了Handler.Callback，并重写了handleMessage方法，当收到消息的类型为LAUNCH_ACTIVITY时，将启动SubActivity的Intent替换为启动TargetActivity的Intent。然后使用反射将Handler的mCallback替换为自定义的CallBack即可。使用时则在application的attachBaseContext方法中进行hook即可</p>
 <hr>
-<h2 id="三-小结"><a href="#三-小结" class="headerlink" title="三.小结"></a>三.小结</h2><p>&emsp;&emsp;本篇文章只针对插件activity的加载做了分析，源码基于8.0。插件activity的加载应该还有生命周期的管理方面，暂不赘述</p>
+<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p>&emsp;&emsp;我们发现BridgeInterceptor的源码相对还是比较简单的，我们依旧针对BridgeInterceptor拦截器的功能做一个总结：</p>
+<ul>
+<li>将用户构建的Request请求中Header的属性进行设置，转化为可以进行网络访问的请求</li>
+<li>调用Chain.proceed获取networkResponse</li>
+<li>对networkResponse，进行gzip解压缩,转化为用户可用的Response</li>
+</ul>
 
       
 
@@ -207,11 +311,7 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
         		</li>
       		
 		</ul>
@@ -230,18 +330,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2020/01/27/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E8%B5%84%E6%BA%90%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%89%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          插件化之资源的加载（三）
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">插件化之Classloader类加载（一）</div>
+    <a href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">okhttp源码分析之RetryAndFollowUpInterceptor篇（二）</div>
       <i class="icon-circle-right"></i>
     </a>
   
