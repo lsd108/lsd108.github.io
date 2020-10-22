@@ -135,6 +135,93 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-okhttp源码分析之ConnectInterceptor篇（五）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/">okhttp源码分析之ConnectInterceptor篇（五）</a>
+    </h1>
+  
+
+        
+        <a href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-10-22T08:43:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-10-22</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;最近的项目比较多，关于okhttp的更新也停了一段时间，现在项目忙完，也会继续深入学习okhttp，每篇博文也只是自己学习的记录。okhttp的系列文章已经是第五篇了，本篇文章主要分析ConnectInterceptor连接拦截器，它的作用就是和服务端建立连接，并调用下一个拦截器。</p>
+<hr>
+<h2 id="二-源码解析"><a href="#二-源码解析" class="headerlink" title="二.源码解析"></a>二.源码解析</h2><p>&emsp;&emsp;ConnectInterceptor是Interceptor的一个实现类，打开ConnectInterceptor的源码，可能你的小脑袋里会出现很多问号，怎么会这么简洁，我们一步一步来看</p>
+<pre><code>object ConnectInterceptor : Interceptor {
+  @Throws(IOException::class)
+  override fun intercept(chain: Interceptor.Chain): Response {
+    val realChain = chain as RealInterceptorChain
+    val exchange = realChain.call.initExchange(chain)
+    val connectedChain = realChain.copy(exchange = exchange)
+    return connectedChain.proceed(realChain.request)
+  }
+}</code></pre>
+        
+          <a class="article-more-a" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-okhttp源码分析之CacheInterceptor篇（四）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -603,85 +690,9 @@
 
 
   
-    <article id="post-eventbus源码分析之Poster的深入理解（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/">eventbus源码分析之Poster的深入理解（一）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-15T04:08:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;传统的事件传递我们会使用到handler,广播或者接口回调等，但是随着我们在开发的过程代码量的增大，以上方式会是我们的项目变得臃肿，所以我们在项目一般会使用eventbus事件总线框架。作为安卓开发，相信大家对eventbus的使用会很了解，这次我会根据自己的理解向大家介绍一下eventbus的源码（本次源码分析基于eventbus3.2.0）。</p>
-        
-          <a class="article-more-a" href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
     </nav>
   
 
@@ -768,10 +779,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
@@ -796,6 +803,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">插件化</a>
               </li>
              
@@ -804,11 +815,11 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
+                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
               </li>
             
             <div class="clearfix"></div>
