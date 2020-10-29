@@ -16,7 +16,7 @@
 <meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;这一篇是okhttp的拦截器篇的第四篇，前面的几个拦截器的源代码还较为简单，CacheInterceptor是拦截器中的比较重要的一个，它是处理与缓存相关的，话不多说，还是从源码出发。  二.源码解析&amp;emsp;&amp;emsp;CacheInterceptor也是基于http的缓存原理，没有缓存时发起请求获取数据，然后更新缓存，如果有缓存，则直接返回缓存数据，我们看下源">
 <meta property="og:image" content="https://i.ibb.co/hZ7dNtQ/Cache-Interceptor.png">
 <meta property="article:published_time" content="2020-06-26T07:30:20.000Z">
-<meta property="article:modified_time" content="2020-10-20T09:38:03.786Z">
+<meta property="article:modified_time" content="2020-10-22T08:57:08.378Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
@@ -433,10 +433,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
@@ -453,11 +449,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -470,6 +462,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
               </li>
              
               <li class="article-tag-list-item">

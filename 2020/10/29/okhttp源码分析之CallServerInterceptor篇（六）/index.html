@@ -6,13 +6,18 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Tag: Eventbus | Lsd&#39;s blog</title>
+  <title>okhttp源码分析之CallServerInterceptor篇（六） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/tags/Eventbus/index.html">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;CallServerInterceptor是okhttp的最后一个拦截器，这篇博文也算okhttp系列的最后一篇了，看完okhttp的源码，目前在脑海中已经有一整套的流程图。CallServerInterceptor顾名思义，对服务器进行网络调用，今天还是从源码出发，逐步解析  二.源码解析&amp;emsp;&amp;emsp;CallServerInterceptor也是Int">
+<meta property="og:type" content="article">
+<meta property="og:title" content="okhttp源码分析之CallServerInterceptor篇（六）">
+<meta property="og:url" content="http://yoursite.com/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;CallServerInterceptor是okhttp的最后一个拦截器，这篇博文也算okhttp系列的最后一篇了，看完okhttp的源码，目前在脑海中已经有一整套的流程图。CallServerInterceptor顾名思义，对服务器进行网络调用，今天还是从源码出发，逐步解析  二.源码解析&amp;emsp;&amp;emsp;CallServerInterceptor也是Int">
+<meta property="article:published_time" content="2020-10-29T07:38:20.000Z">
+<meta property="article:modified_time" content="2020-10-29T07:42:13.146Z">
 <meta property="article:author" content="李思达">
+<meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
@@ -133,136 +138,267 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-okhttp源码分析之CallServerInterceptor篇（六）" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      okhttp源码分析之CallServerInterceptor篇（六）
+    </h1>
+  
+
+        
+        <a href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-10-29T07:38:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-10-29</time>
+</a>
+        
+      </header>
     
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;CallServerInterceptor是okhttp的最后一个拦截器，这篇博文也算okhttp系列的最后一篇了，看完okhttp的源码，目前在脑海中已经有一整套的流程图。CallServerInterceptor顾名思义，对服务器进行网络调用，今天还是从源码出发，逐步解析</p>
+<hr>
+<h2 id="二-源码解析"><a href="#二-源码解析" class="headerlink" title="二.源码解析"></a>二.源码解析</h2><p>&emsp;&emsp;CallServerInterceptor也是Interceptor的一个实现类，它的功能是和服务器搭建socket连接，同时创建httpStream，通过sink往服务器写入请求信息，通过source读取服务返回的响应信息，详细的我们看看源码</p>
+<pre><code>@Throws(IOException::class)
+override fun intercept(chain: Interceptor.Chain): Response {
+val realChain = chain as RealInterceptorChain
+val exchange = realChain.exchange!!
+val request = realChain.request
+val requestBody = request.body
+val sentRequestMillis = System.currentTimeMillis()
+//向exchange中写入头部信息
+exchange.writeRequestHeaders(request)</code></pre><a id="more"></a>  
+<pre><code>var invokeStartEvent = true
+var responseBuilder: Response.Builder? = null
+//判断当前的请求是否是&quot;get&quot;或者是否包含&quot;head&quot;
+if (HttpMethod.permitsRequestBody(request.method) &amp;&amp; requestBody != null) {
+  // If there&apos;s a &quot;Expect: 100-continue&quot; header on the request, wait for a &quot;HTTP/1.1 100
+  // Continue&quot; response before transmitting the request body. If we don&apos;t get that, return
+  // what we did get (such as a 4xx response) without ever transmitting the request body.
+  //判断是否是100-continue状况
+  if (&quot;100-continue&quot;.equals(request.header(&quot;Expect&quot;), ignoreCase = true)) {
+    //创建responseBuilder
+    exchange.flushRequest()
+    responseBuilder = exchange.readResponseHeaders(expectContinue = true)
+    exchange.responseHeadersStart()
+    invokeStartEvent = false
+  }
+  if (responseBuilder == null) {
+    //判断requestBody是否支持二进制
+    if (requestBody.isDuplex()) {
+      // Prepare a duplex body so that the application can send a request body later.
+      //创建二进制的requestBody
+      exchange.flushRequest()
+      val bufferedRequestBody = exchange.createRequestBody(request, true).buffer()
+      requestBody.writeTo(bufferedRequestBody)
+    } else {
+      // Write the request body if the &quot;Expect: 100-continue&quot; expectation was met.
+      //直接发送body的内容
+      val bufferedRequestBody = exchange.createRequestBody(request, false).buffer()
+      requestBody.writeTo(bufferedRequestBody)
+      bufferedRequestBody.close()
+    }
+  } else {
+    exchange.noRequestBody()
+    //responseBuilder不为空的情况，并且判断当前是否是HTTP/2连接
+    if (!exchange.connection.isMultiplexed) {
+      // If the &quot;Expect: 100-continue&quot; expectation wasn&apos;t met, prevent the HTTP/1 connection
+      // from being reused. Otherwise we&apos;re still obligated to transmit the request body to
+      // leave the connection in a consistent state.
+      //不是HTTP/2连接的情况，关闭事务连接
+      exchange.noNewExchangesOnConnection() 
+    }
+  }
+} else {
+  //当前的请求不包含body
+  exchange.noRequestBody()
+}
+//如果requestBody为空，或者不支持二进制body HTTP2.0，则将当前的请求finish掉
+if (requestBody == null || !requestBody.isDuplex()) {
+  exchange.finishRequest()
+}
+if (responseBuilder == null) {
+  responseBuilder = exchange.readResponseHeaders(expectContinue = false)!!
+  if (invokeStartEvent) {
+    exchange.responseHeadersStart()
+    invokeStartEvent = false
+  }
+}
+//通过responseBuilder获取到返回的response
+var response = responseBuilder
+    .request(request)
+    .handshake(exchange.connection.handshake())
+    .sentRequestAtMillis(sentRequestMillis)
+    .receivedResponseAtMillis(System.currentTimeMillis())
+    .build()
+var code = response.code
+//判断响应码是否是100
+if (code == 100) {
+  // Server sent a 100-continue even though we did not request one. Try again to read the actual
+  // response status.
+  responseBuilder = exchange.readResponseHeaders(expectContinue = false)!!
+  if (invokeStartEvent) {
+    exchange.responseHeadersStart()
+  }
+  response = responseBuilder
+      .request(request)
+      .handshake(exchange.connection.handshake())
+      .sentRequestAtMillis(sentRequestMillis)
+      .receivedResponseAtMillis(System.currentTimeMillis())
+      .build()
+  code = response.code
+}
+//通过网络接收到的响应，将返回体返回
+exchange.responseHeadersEnd(response)
+
+response = if (forWebSocket &amp;&amp; code == 101) {
+  // Connection is upgrading, but we need to ensure interceptors see a non-null response body.
+  response.newBuilder()
+      .body(EMPTY_RESPONSE)
+      .build()
+} else {
+  response.newBuilder()
+      .body(exchange.openResponseBody(response))
+      .build()
+}
+if (&quot;close&quot;.equals(response.request.header(&quot;Connection&quot;), ignoreCase = true) ||
+    &quot;close&quot;.equals(response.header(&quot;Connection&quot;), ignoreCase = true)) {
+  exchange.noNewExchangesOnConnection()
+}
+//204 表示服务器成功处理了请求，但不需要返回任何实体内容，并且希望返回更新了的元信息
+//205 服务器成功处理了请求，且没有返回任何内容
+if ((code == 204 || code == 205) &amp;&amp; response.body?.contentLength() ?: -1L &gt; 0L) {
+  throw ProtocolException(
+      &quot;HTTP $code had non-zero Content-Length: ${response.body?.contentLength()}&quot;)
+}
+return response
+}</code></pre><p>&emsp;&emsp;详细的注释我在源码标注了，针对上述源码简单整理一下主要逻辑：</p>
+<ul>
+<li>通过writeRequestHeaders写入请求头信息</li>
+<li>通过createRequestBody写入请求体</li>
+<li>通过readResponseHeaders读取响应头</li>
+<li>通过openResponseBody读取响应体</li>
+</ul>
+<h3 id="writeRequestHeaders"><a href="#writeRequestHeaders" class="headerlink" title="writeRequestHeaders"></a>writeRequestHeaders</h3><pre><code>@Throws(IOException::class)
+fun writeRequestHeaders(request: Request) {
+  try {
+    eventListener.requestHeadersStart(call)
+    codec.writeRequestHeaders(request)
+    eventListener.requestHeadersEnd(call, request)
+  } catch (e: IOException) {
+    eventListener.requestFailed(call, e)
+    trackFailure(e)
+    throw e
+  }
+}</code></pre><p>&emsp;&emsp;requestHeadersStart在发送请求头之前调用，并且对一个call,可以多次的调用此函数；writeRequestHeaders用于更新http引擎的Request；requestHeadersEnd则在发送请求头后立即调用，和requestHeadersStart相互对应</p>
+<h3 id="createRequestBody"><a href="#createRequestBody" class="headerlink" title="createRequestBody"></a>createRequestBody</h3><pre><code>@Throws(IOException::class)
+fun createRequestBody(request: Request, duplex: Boolean): Sink {
+  this.isDuplex = duplex
+  val contentLength = request.body!!.contentLength()
+  eventListener.requestBodyStart(call)
+  val rawRequestBody = codec.createRequestBody(request, contentLength)
+  return RequestBodySink(rawRequestBody, contentLength)
+}</code></pre><p>&emsp;&emsp;createRequestBody中，我们要注意写入请求体的前提是判断当前的请求是否是”get”或者是否包含”head”，最终返回的是RequestBodySink</p>
+<h3 id="readResponseHeaders"><a href="#readResponseHeaders" class="headerlink" title="readResponseHeaders"></a>readResponseHeaders</h3><pre><code>@Throws(IOException::class)
+fun readResponseHeaders(expectContinue: Boolean): Response.Builder? {
+  try {
+    val result = codec.readResponseHeaders(expectContinue)
+    result?.initExchange(this)
+    return result
+  } catch (e: IOException) {
+    eventListener.responseFailed(call, e)
+    trackFailure(e)
+    throw e
+  }
+}</code></pre><p>&emsp;&emsp;读取响应头，也是通知eventListener响应头开始读取，在源码的调用链是调用ExchangeCodec的readResponseHeaders()方法来读取响应头</p>
+<h3 id="openResponseBody"><a href="#openResponseBody" class="headerlink" title="openResponseBody"></a>openResponseBody</h3><pre><code>@Throws(IOException::class)
+fun openResponseBody(response: Response): ResponseBody {
+  try {
+    val contentType = response.header(&quot;Content-Type&quot;)
+    val contentLength = codec.reportedContentLength(response)
+    val rawSource = codec.openResponseBodySource(response)
+    val source = ResponseBodySource(rawSource, contentLength)
+    return RealResponseBody(contentType, contentLength, source.buffer())
+  } catch (e: IOException) {
+    eventListener.responseFailed(call, e)
+    trackFailure(e)
+    throw e
+  }
+}</code></pre><p>&emsp;&emsp;openResponseBody该对象封装了连接服务端的输入流对 Source 对象（响应体 body）和 Headers 信息，最终完成了body的构建</p>
+<p>&emsp;&emsp;我们知道拦截器是一级级递归调用下来的，CallServerInterceptor是okhttp网络请求中最后一个拦截器，它会根据服务器返回的数据通过构造者的模式创建一个 Response对象 ，然后返回到上一级 Interceptor 对象。至于是如何处理 Response可以移步上一篇博文， ConnectInterceptor的简单分析</p>
+<hr>
+<h2 id="三-总结"><a href="#三-总结" class="headerlink" title="三.总结"></a>三.总结</h2><p>&emsp;&emsp;在源码涉及到一些响应码，大家如果想要了解相关<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/" target="_blank" rel="noopener">http响应码</a>的知识，可以移步至此</p>
+<p>&emsp;&emsp;okhttp的最后一篇博文笔记也写完了，网络请求涉及到的知识体系太过庞大，很多细节，在博文笔记也未详细分析。说实话，写完这一系列的文章，也并没有翻过一座山的喜悦之情，毕竟要学习的知识还有很多，不要拖延，立即行动，愿和大家共勉</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
       
       
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-28T12:08:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-28</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/">eventbus源码分析之post,postSticky流程分析（三）</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-21T11:08:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-21</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">okhttp源码分析之ConnectInterceptor篇（五）</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/">eventbus源码分析之register，unregister流程分析（二）</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-15T04:08:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-15</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/02/15/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BPoster%E7%9A%84%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%EF%BC%88%E4%B8%80%EF%BC%89/">eventbus源码分析之Poster的深入理解（一）</a>
-    </h1>
   
 
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
 
 
           </div>
@@ -285,9 +421,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,
