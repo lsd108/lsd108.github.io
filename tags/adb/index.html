@@ -6,11 +6,11 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Lsd&#39;s blog</title>
+  <title>Tag: adb | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta property="og:type" content="website">
 <meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/page/3/index.html">
+<meta property="og:url" content="http://yoursite.com/tags/adb/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
 <meta property="article:author" content="李思达">
 <meta name="twitter:card" content="summary">
@@ -135,275 +135,62 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-深入理解插件化之四大组件activity的加载（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
+  
     
-      <header class="article-header">
-        
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2020" class="archive-year">2020</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/" class="archive-article-date">
+  	<time datetime="2020-11-13T02:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-11-13</time>
+</a>
+        </div>
+    	 
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">插件化之四大组件activity的加载（二）</a>
+      <a class="archive-article-title" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/">一次奇怪的需求之基于adb的usb传输数据</a>
     </h1>
   
 
-        
-        <a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍</p>
-<hr>
-<h2 id="二-activity的启动流程"><a href="#二-activity的启动流程" class="headerlink" title="二.activity的启动流程"></a>二.activity的启动流程</h2><ul>
-<li>1.Context在调用startActivity后，实际上是ContextImpl的startActivity</li>
-<li>2.内部会通过Instrumentation来尝试启动Activity</li>
-<li>3.调用ams的startActivity方法，实现跨进程通信</li>
-<li>4.ams校验完activity的合法性，通过ApplicationThread回调到我们的进程</li>
-<li>5.applicationThread就是一个binder，回调逻辑是在binder线程池中完成的，所以需要通过Handler将其切换到ui线程</li>
-<li>6.发送消息LAUNCH_ACTIVITY，它对应handleLaunchActivity，在此方法中完成Activity的创建和启动</li>
-</ul>
-        
-          <a class="article-more-a" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
+        <div class="article-info info-on-right">
+          
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">usb传输数据</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">adb</a>
         		</li>
       		
 		</ul>
 	</div>
 
-      
+          
 
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
+        </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
   
-    <article id="post-深入理解插件化之Classloader类加载（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
+  
+    </div></section>
+  
+
     
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">插件化之Classloader类加载（一）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-15T04:30:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-插件化的来源"><a href="#一-插件化的来源" class="headerlink" title="一.插件化的来源"></a>一.插件化的来源</h2><p>&emsp;&emsp;插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK<br>独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。</p>
-<hr>
-<h2 id="二-插件化所要解决的问题"><a href="#二-插件化所要解决的问题" class="headerlink" title="二.插件化所要解决的问题"></a>二.插件化所要解决的问题</h2><ul>
-<li>减少APP体积，随着逐渐的迭代开发APP的功能模块越来越多，apk体积会越来越大</li>
-<li>降低模块之间的耦合度</li>
-<li>应用的方法数目可能超过65535，APP占用的内存过大</li>
-</ul>
-        
-          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Classloader</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-无痕埋点ASM设计方案" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据</p>
-<hr>
-<h2 id="二-实现方案缺点比较"><a href="#二-实现方案缺点比较" class="headerlink" title="二.实现方案缺点比较"></a>二.实现方案缺点比较</h2><ul>
-<li>静态代理</li>
-</ul>
-<p>&emsp;&emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM</p>
-<ul>
-<li>动态代理</li>
-</ul>
-<p>&emsp;&emsp;就是要找到那个被点击的View的点击处理逻辑，然后利用截取view.onclicklistener或者window.callback，对原处理逻辑进行“拦截”</p>
-        
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">无痕埋点</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ASM</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-  
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
-    </nav>
-  
 
 
           </div>
@@ -425,10 +212,10 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
+		isHome: false,
 		isPost: false,
 		isArchive: false,
-		isTag: false,
+		isTag: true,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,

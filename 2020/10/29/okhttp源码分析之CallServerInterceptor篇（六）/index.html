@@ -15,7 +15,7 @@
 <meta property="og:site_name" content="Lsd&#39;s blog">
 <meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;CallServerInterceptor是okhttp的最后一个拦截器，这篇博文也算okhttp系列的最后一篇了，看完okhttp的源码，目前在脑海中已经有一整套的流程图。CallServerInterceptor顾名思义，对服务器进行网络调用，今天还是从源码出发，逐步解析  二.源码解析&amp;emsp;&amp;emsp;CallServerInterceptor也是Int">
 <meta property="article:published_time" content="2020-10-29T07:38:20.000Z">
-<meta property="article:modified_time" content="2020-10-29T07:42:13.146Z">
+<meta property="article:modified_time" content="2020-11-23T14:38:25.620Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="okhttp">
 <meta name="twitter:card" content="summary">
@@ -171,7 +171,7 @@ val sentRequestMillis = System.currentTimeMillis()
 //向exchange中写入头部信息
 exchange.writeRequestHeaders(request)</code></pre><a id="more"></a>  
 <pre><code>var invokeStartEvent = true
-var responseBuilder: Response.Builder? = null
+var responseBuilder: Response.Builder? = null  
 //判断当前的请求是否是&quot;get&quot;或者是否包含&quot;head&quot;
 if (HttpMethod.permitsRequestBody(request.method) &amp;&amp; requestBody != null) {
   // If there&apos;s a &quot;Expect: 100-continue&quot; header on the request, wait for a &quot;HTTP/1.1 100
@@ -363,6 +363,15 @@ fun openResponseBody(response: Response): ResponseBody {
   
 <nav id="article-nav">
   
+    <a href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          一次奇怪的需求之基于adb的usb传输数据
+        
+      </div>
+    </a>
+  
   
     <a href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
       <div class="article-nav-title">okhttp源码分析之ConnectInterceptor篇（五）</div>
@@ -483,10 +492,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
@@ -503,11 +508,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
+                <a href="javascript:void(0)" class="js-tag color3">usb传输数据</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">adb</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -516,6 +525,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
               </li>
              
               <li class="article-tag-list-item">

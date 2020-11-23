@@ -6,13 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Lsd&#39;s blog</title>
+  <title>一次奇怪的需求之基于adb的usb传输数据 | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/page/3/index.html">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;笔者现在的公司是一家机器人科技公司，所以对于安卓开发来说，要做的不仅仅是普通项目的架构和界面ui的绘制了，往往还涉及到和电子端硬件的通讯。在安卓开发中，字符串、文件以及视频流的传输通常依赖于网络，但是笔者这次却接到这样的一个需求，只通过usb线，不依赖于网络传输以上数据。当时听到这个需求，说实话脑袋里的确有很多问号，usb串口传输使用谷歌的serialPort是可以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一次奇怪的需求之基于adb的usb传输数据">
+<meta property="og:url" content="http://yoursite.com/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;笔者现在的公司是一家机器人科技公司，所以对于安卓开发来说，要做的不仅仅是普通项目的架构和界面ui的绘制了，往往还涉及到和电子端硬件的通讯。在安卓开发中，字符串、文件以及视频流的传输通常依赖于网络，但是笔者这次却接到这样的一个需求，只通过usb线，不依赖于网络传输以上数据。当时听到这个需求，说实话脑袋里的确有很多问号，usb串口传输使用谷歌的serialPort是可以">
+<meta property="article:published_time" content="2020-11-13T02:29:22.000Z">
+<meta property="article:modified_time" content="2020-11-23T14:57:15.408Z">
 <meta property="article:author" content="李思达">
+<meta property="article:tag" content="usb传输数据">
+<meta property="article:tag" content="adb">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
@@ -133,216 +139,224 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-    <article id="post-深入理解插件化之四大组件activity的加载（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+            <article id="post-一次奇怪的需求之基于adb的usb传输数据" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">插件化之四大组件activity的加载（二）</a>
+    <h1 class="article-title" itemprop="name">
+      一次奇怪的需求之基于adb的usb传输数据
     </h1>
   
 
         
-        <a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
+        <a href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/" class="archive-article-date">
+  	<time datetime="2020-11-13T02:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-11-13</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;上一篇博文，我们针对插件化的classLoader类加载机制进行了分析，本片文章将针对activity的加载做一个相关介绍</p>
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者现在的公司是一家机器人科技公司，所以对于安卓开发来说，要做的不仅仅是普通项目的架构和界面ui的绘制了，往往还涉及到和电子端硬件的通讯。在安卓开发中，字符串、文件以及视频流的传输通常依赖于网络，但是笔者这次却接到这样的一个需求，只通过usb线，不依赖于网络传输以上数据。当时听到这个需求，说实话脑袋里的确有很多问号，usb串口传输使用谷歌的serialPort是可以传输字符串的（网上有很多相关的资料，这里丢一个<a href="https://juejin.im/post/6844903606982967303#heading-6" target="_blank" rel="noopener">串口通讯</a>链接），但是有关大文件和视频流如何传输呢，答案是基于adb的usb传输数据，详细的听我慢慢道来</p>
 <hr>
-<h2 id="二-activity的启动流程"><a href="#二-activity的启动流程" class="headerlink" title="二.activity的启动流程"></a>二.activity的启动流程</h2><ul>
-<li>1.Context在调用startActivity后，实际上是ContextImpl的startActivity</li>
-<li>2.内部会通过Instrumentation来尝试启动Activity</li>
-<li>3.调用ams的startActivity方法，实现跨进程通信</li>
-<li>4.ams校验完activity的合法性，通过ApplicationThread回调到我们的进程</li>
-<li>5.applicationThread就是一个binder，回调逻辑是在binder线程池中完成的，所以需要通过Handler将其切换到ui线程</li>
-<li>6.发送消息LAUNCH_ACTIVITY，它对应handleLaunchActivity，在此方法中完成Activity的创建和启动</li>
+<h2 id="二-实现方案思路"><a href="#二-实现方案思路" class="headerlink" title="二.实现方案思路"></a>二.实现方案思路</h2><ul>
+<li>在安卓端和pc端使用usb线连接后，通过adb命令转接端口</li>
+<li>安卓端作为server,监听socket请求</li>
+<li>PC端作为client,请求socket连接</li>
 </ul>
-        
-          <a class="article-more-a" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-深入理解插件化之Classloader类加载（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">插件化之Classloader类加载（一）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-15T04:30:21.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-15</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-插件化的来源"><a href="#一-插件化的来源" class="headerlink" title="一.插件化的来源"></a>一.插件化的来源</h2><p>&emsp;&emsp;插件化技术最初源于免安装运行 apk 的想法， 这个免安装的 apk 就可以理解为插件，而支 持插件的 app 我们一般叫宿主。插件一般是指经过处理的APK，so和dex等文件，插件可以被宿主进行加载，有的插件也可以作为APK<br>独立运行。将一个应用按照插件的方式进行改造的过程就叫作插件化。</p>
-<hr>
-<h2 id="二-插件化所要解决的问题"><a href="#二-插件化所要解决的问题" class="headerlink" title="二.插件化所要解决的问题"></a>二.插件化所要解决的问题</h2><ul>
-<li>减少APP体积，随着逐渐的迭代开发APP的功能模块越来越多，apk体积会越来越大</li>
-<li>降低模块之间的耦合度</li>
-<li>应用的方法数目可能超过65535，APP占用的内存过大</li>
-</ul>
-        
-          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Classloader</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8BClassloader%E7%B1%BB%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-无痕埋点ASM设计方案" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">无痕埋点ASM设计方案</a>
-    </h1>
-  
-
-        
-        <a href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/" class="archive-article-date">
-  	<time datetime="2020-01-13T13:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-无痕埋点概述"><a href="#一-无痕埋点概述" class="headerlink" title="一.无痕埋点概述"></a>一.无痕埋点概述</h2><p>&emsp;&emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据</p>
-<hr>
-<h2 id="二-实现方案缺点比较"><a href="#二-实现方案缺点比较" class="headerlink" title="二.实现方案缺点比较"></a>二.实现方案缺点比较</h2><ul>
-<li>静态代理</li>
-</ul>
-<p>&emsp;&emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM</p>
+<a id="more"></a>
+<p>&emsp;&emsp;我们需要使用的是安卓中的ServerSocket，我们看看它的类注释，ServerSocket实现了服务器套接字，基于该请求，将结果返回给请求者。一个应用程序可以更改创建套接字的套接字工厂，适用于本地防火墙。读到这我们大概可以知道，基于usb的物理传输链接可能需要使用ServerSocket</p>
+<pre><code>* This class implements server sockets.
+* based on that request, and then possibly returns a result to the requester.
+* An application can change the socket factory that creates the socket implementation to configure itself to create sockets appropriate to the local firewall</code></pre><hr>
+<h2 id="三-具体编码方案"><a href="#三-具体编码方案" class="headerlink" title="三.具体编码方案"></a>三.具体编码方案</h2><p>实现具体方案规划（由于笔者此次需求是为了实现一个sdk,所以会从这次简易sdk封装的角度，也算是针对这次需求实现的一个记录）：</p>
 <ul>
-<li>动态代理</li>
+<li>根据功能区分模块，将模块划分为以下板块：<ul>
+<li>用于和PC端发送指令消息</li>
+<li>用于接收PC端文本数据</li>
+<li>用于接收PC端视频流数据 </li>
+<li>用于接收PC端视频文件数据</li>
 </ul>
-<p>&emsp;&emsp;就是要找到那个被点击的View的点击处理逻辑，然后利用截取view.onclicklistener或者window.callback，对原处理逻辑进行“拦截”</p>
-        
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/#more">more >></a>
-        
+</li>
+<li>为每个板块划分端口号，保证所有板块在基于adb的传输过程中互不干扰</li>
+<li>单个模块创建单实例，通过线程同步来控制资源的并发访问<ul>
+<li>每个实例创建一个线程，因为通信的连接失阻塞机制（保证主线的任何操作不影响usb通讯的传输）</li>
+<li>构建ServerSocket传入端口号</li>
+<li>通过serverSocket获取到OutputStream和InputStream</li>
+<li>通过不断的循环实时读取和发送相应的消息</li>
+<li>抽取公共板块，将连接端口号和断开连接抽象，为后续扩展做准备  <h3 id="编码部分"><a href="#编码部分" class="headerlink" title="编码部分"></a>编码部分</h3><h5 id="android服务器端"><a href="#android服务器端" class="headerlink" title="android服务器端"></a>android服务器端</h5></li>
+<li>部分代码（此处只贴上其中一个模块的部分代码，此处以传输视频流为例）</li>
+</ul>
+</li>
+</ul>
+<pre><code>private class UsbSocketThread extends Thread {
+    //当前ServerSocket的端口号
+    private int port;
+    //视频流可以解析为没一阵的数据，length代表图像的长度
+    public String length;
+    //读取图像数据的标示位
+    private int offset = 0;
+    //输入输出流，读取写入时会用到
+    private BufferedInputStream input;     
+    private BufferedOutputStream output;
+
+    public UsbSocketThread(int port) {
+        this.port = port;
+    }
+
+    @Override
+    public void run() {
+        super.run();
+        try {
+            //传入端口号，创建ServerSocket
+            ServerSocket serverSocket = new ServerSocket(port);  
+            //不断的循环，保证一直处于一个获取流的状态
+            while (true) {
+                //创建和套接字的连接，该方法将阻塞，知道建立连接为止
+                socket = serverSocket.accept();                  
+                output = new BufferedOutputStream(socket.getOutputStream());
+                input = new BufferedInputStream(socket.getInputStream());
+                if (input.markSupported())
+                    //收到了客户端发过来的图像数据
+                    Length = new ReadMsgUtil().readMsgFromSocket(input);
+                //告知客户端，已接收到数据  
+                new ReadMsgUtil().sendMsg(&quot;receive data&quot;, output);
+                if (!(&quot;&quot;).equals(Length)) {
+                    //分配byte数组，用于存放图像的空间
+                    byte[] bitmapBuff = new byte[Integer.valueOf(Length)];
+                    //读取图像数据放空间里
+                    while (offset &lt; Integer.valueOf(Length)) {
+                        int len = input.read(bitmapBuff, offset, Integer.valueOf(Length) -offset);
+                        offset += len;
+                    }
+                    Length = &quot;&quot;;
+                    //将图像数据回调出去
+                    if (mVideoCallBack != null) {
+                        mVideoCallBack.getVideoStreamingDate(bitmapBuff, offset); 
+                    } 
+                }
+                //通知客户端，已接收完毕
+                new ReadMsgUtil().sendMsg(&quot;12&quot;, output); 
+                socket.close(); 
+                offset = 0;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+public class ReadMsgUtil {
+//读取客户端发过来的文本数据
+  public String readMsgFromSocket(InputStream in) {
+    String msg = &quot;&quot;;
+    byte[] tempbuffer = new byte[1024];
+    try {
+        int numReadedBytes = in.read(tempbuffer, 0, tempbuffer.length);
+        if (numReadedBytes&gt;0){
+            msg = new String(tempbuffer, 0, numReadedBytes, &quot;utf-8&quot;);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return msg;
+  }
+
+  //发送文本数据给客户端
+  public void sendMsg(String msg, OutputStream output) {
+    String msg = msg;
+    try {
+        if (output != null ) {
+            output.write(msg.getBytes(&quot;UTF-8&quot;));
+            output.flush();
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+  }
+}</code></pre><p>&emsp;&emsp;详细的步骤和代码注释，看文中标注即可，这里只提出两点</p>
+<ul>
+<li>线程执行 ServerSocket的accept()方法, 等待客户的连接, 直到接收到了客户连接, 才从 accept()方法返回，线程在这种情况下可能会进入阻塞状态</li>
+<li>接口将当前的图像bate数组和从偏移量开始解析的字节数回调到上层后，上层需要使用BitmapFactory.decodeByteArray，将其转化为bitmap，获取解码后的位图</li>
+</ul>
+<h5 id="PC客户端（使用python-这里附上我们PC端小哥的部分代码）"><a href="#PC客户端（使用python-这里附上我们PC端小哥的部分代码）" class="headerlink" title="PC客户端（使用python,这里附上我们PC端小哥的部分代码）"></a>PC客户端（使用python,这里附上我们PC端小哥的部分代码）</h5><pre><code># 获取电脑自带摄像头，若用usb摄像头则把0改为1
+cap = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+# 调整采集图像大小为640*480
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 120)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
+
+def server_picture_socket():
+  while True:
+    client_address = (&apos;127.0.0.1&apos;, 7655)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   #这个就是“拨打电话”了
+    client_socket.connect(client_address)
+    #print(&quot;准备发送&quot;)
+
+    # 获取一帧图像
+    ret, img = cap.read()
+    # 如果ret为false，表示没有获取到图像，退出循环
+    if ret is False:
+        print(&quot;can not get this frame&quot;)
+        continue    
+
+    # 将opencv下的图像转换为PIL支持的格式
+    image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    # 缓存对象
+    buf = io.BytesIO()
+    # 将PIL下的图像压缩成jpeg格式，存入buf中
+    image.save(buf, format=&apos;JPEG&apos;)
+    # 从buf中读出jpeg格式的图像
+    jpeg = buf.getvalue()
+    buf.close()
+    jpeg_len = str(len(jpeg))
+    #告知服务器端需要接受的图像大小
+    client_socket.send(jpeg_len.encode(&quot;UTF-8&quot;))            
+    #知道服务器端接收到了长度
+    recv= client_socket.recv(1024).decode()           
+    #发送图像数据给服务器端
+    client_socket.sendall(jpeg)        
+    #对面发过来消息他已经接收完图像
+    re = client_socket.recv(1024).decode()         
+
+    #print(&quot;安卓端：&quot;, re)
+    #print(&quot;发送完毕&quot;)
+
+client_socket.close()
+
+if __name__ == &apos;__main__&apos;:    
+    subprocess.call(&quot;adb shell am broadcast -a NotifyServiceStop&quot;, shell=True)
+    subprocess.call(&quot;adb forward tcp:7655 tcp:7650&quot;, shell=True)
+    subprocess.call(&quot;adb shell am broadcast -a NotifyServiceStart&quot;, shell=True)
+    print(&quot;adb connects successfully&quot;)
+    server_picture_socket()</code></pre><hr>
+<h2 id="四-电脑环境的配置"><a href="#四-电脑环境的配置" class="headerlink" title="四.电脑环境的配置"></a>四.电脑环境的配置</h2><p>由于电脑端作为客户端向手机端传送视频流数据，所以需要安装opencv相关的环境配置</p>
+<ul>
+<li>首先在电脑环境安装pip <ul>
+<li>pip install pillow</li>
+</ul>
+</li>
+<li>其次使用pip安装opencv的环境<ul>
+<li>pip install opencv-python</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="五-此方案的优缺点和问题"><a href="#五-此方案的优缺点和问题" class="headerlink" title="五.此方案的优缺点和问题"></a>五.此方案的优缺点和问题</h2><ul>
+<li>优点：<ul>
+<li>字符串、文件以及视频流等从网口传输修改为物理传输，稳定性提高，不依赖于网路环境，保证机器在断网情况下，也能传输数据</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>传输占用adb,就是说如果机器pc端和装有androidstdio的电脑端不是同一台主机，就会导致装有androidstdio的电脑端无法调试（这点很恶心，笔者也试过基于WiFi的调试，不过由于各种调试都是基于adb的，端口被占用的话，没办法进行调试）</li>
+<li>开发板和主机之间的接线不能断开</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="六-小结"><a href="#六-小结" class="headerlink" title="六.小结"></a>六.小结</h2><p>&emsp;&amp;emsp这篇文章算是笔者从一脸懵逼的接受需要到慢慢了解，最后实现的一个过程。文中涉及到ServerSocket的知识，并没有详细介绍，如果想要深入的话，可以看一下这篇文章<a href="https://www.jianshu.com/p/665994c2e784" target="_blank" rel="noopener">ServerSocket详解</a>。</p>
+
       
 
       
@@ -355,11 +369,11 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">无痕埋点</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">usb传输数据</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">ASM</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">adb</a>
         		</li>
       		
 		</ul>
@@ -368,16 +382,24 @@
       
 
       
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/">展开全文 >></a>
-        </p>
-      
 
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
+  
+  
+    <a href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">okhttp源码分析之CallServerInterceptor篇（六）</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -397,12 +419,14 @@
 
 
 
+  
+  
+  
 
   
+
   
-    <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
-    </nav>
+
   
 
 
@@ -425,8 +449,8 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
-		isPost: false,
+		isHome: false,
+		isPost: true,
 		isArchive: false,
 		isTag: false,
 		isCategory: false,

@@ -135,6 +135,92 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-一次奇怪的需求之基于adb的usb传输数据" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/">一次奇怪的需求之基于adb的usb传输数据</a>
+    </h1>
+  
+
+        
+        <a href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/" class="archive-article-date">
+  	<time datetime="2020-11-13T02:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-11-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者现在的公司是一家机器人科技公司，所以对于安卓开发来说，要做的不仅仅是普通项目的架构和界面ui的绘制了，往往还涉及到和电子端硬件的通讯。在安卓开发中，字符串、文件以及视频流的传输通常依赖于网络，但是笔者这次却接到这样的一个需求，只通过usb线，不依赖于网络传输以上数据。当时听到这个需求，说实话脑袋里的确有很多问号，usb串口传输使用谷歌的serialPort是可以传输字符串的（网上有很多相关的资料，这里丢一个<a href="https://juejin.im/post/6844903606982967303#heading-6" target="_blank" rel="noopener">串口通讯</a>链接），但是有关大文件和视频流如何传输呢，答案是基于adb的usb传输数据，详细的听我慢慢道来</p>
+<hr>
+<h2 id="二-实现方案思路"><a href="#二-实现方案思路" class="headerlink" title="二.实现方案思路"></a>二.实现方案思路</h2><ul>
+<li>在安卓端和pc端使用usb线连接后，通过adb命令转接端口</li>
+<li>安卓端作为server,监听socket请求</li>
+<li>PC端作为client,请求socket连接</li>
+</ul>
+        
+          <a class="article-more-a" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/#more">more >></a>
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">usb传输数据</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">adb</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-okhttp源码分析之CallServerInterceptor篇（六）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -620,85 +706,6 @@ exchange.writeRequestHeaders(request)</code></pre>
 
 
   
-    <article id="post-eventbus源码分析之post,postSticky流程分析（三）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/">eventbus源码分析之post,postSticky流程分析（三）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-28T12:08:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-28</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。</p>
-<hr>
-<h2 id="二-eventbus的post普通事件发布"><a href="#二-eventbus的post普通事件发布" class="headerlink" title="二.eventbus的post普通事件发布"></a>二.eventbus的post普通事件发布</h2><p>&emsp;&emsp;当我们发布一个普通事件时，一般会这样写：</p>
-<pre><code>EventBus.getDefault().post(event);</code></pre><p>&emsp;&emsp;接下来我们直接看看post方法</p>
-        
-          <a class="article-more-a" href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
@@ -788,10 +795,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
@@ -808,11 +811,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
+                <a href="javascript:void(0)" class="js-tag color3">usb传输数据</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">adb</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -821,6 +828,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
               </li>
              
               <li class="article-tag-list-item">
