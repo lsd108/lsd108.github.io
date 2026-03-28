@@ -6,13 +6,18 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>Tag: activity启动流程 | Lsd&#39;s blog</title>
+  <title>Android业务架构Jetpack四件套之ViewModel篇（三） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Lsd&#39;s blog">
-<meta property="og:url" content="http://yoursite.com/tags/activity%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/index.html">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;在前面两篇文章中，我们分别探讨了 Jetpack 四件套中的 Lifecycle 和 LiveData 组件。Lifecycle 为我们解决了生命周期管理的痛点，LiveData 则提供了一种优雅的数据观察机制。今天，我们将继续 Jetpack 四件套的学习之旅，聚焦于第三个核心组件 ——ViewModel。&amp;emsp;&amp;emsp;传统的 Android 开发模式存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android业务架构Jetpack四件套之ViewModel篇（三）">
+<meta property="og:url" content="http://yoursite.com/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BViewModel%E7%AF%87%EF%BC%88%E4%B8%89%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;在前面两篇文章中，我们分别探讨了 Jetpack 四件套中的 Lifecycle 和 LiveData 组件。Lifecycle 为我们解决了生命周期管理的痛点，LiveData 则提供了一种优雅的数据观察机制。今天，我们将继续 Jetpack 四件套的学习之旅，聚焦于第三个核心组件 ——ViewModel。&amp;emsp;&amp;emsp;传统的 Android 开发模式存">
+<meta property="article:published_time" content="2026-03-28T14:18:29.000Z">
+<meta property="article:modified_time" content="2026-03-28T14:19:55.635Z">
 <meta property="article:author" content="李思达">
+<meta property="article:tag" content="Jetpack">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
@@ -133,64 +138,166 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-Android业务架构Jetpack四件套之ViewModel篇（三）" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-01-19T07:30:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-01-19</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/01/19/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%8F%92%E4%BB%B6%E5%8C%96%E4%B9%8B%E5%9B%9B%E5%A4%A7%E7%BB%84%E4%BB%B6activity%E7%9A%84%E5%8A%A0%E8%BD%BD%EF%BC%88%E4%BA%8C%EF%BC%89/">插件化之四大组件activity的加载（二）</a>
+    <h1 class="article-title" itemprop="name">
+      Android业务架构Jetpack四件套之ViewModel篇（三）
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BViewModel%E7%AF%87%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-28T14:18:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-28</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;在前面两篇文章中，我们分别探讨了 Jetpack 四件套中的 Lifecycle 和 LiveData 组件。Lifecycle 为我们解决了生命周期管理的痛点，LiveData 则提供了一种优雅的数据观察机制。今天，我们将继续 Jetpack 四件套的学习之旅，聚焦于第三个核心组件 ——ViewModel。<br><br>&emsp;&emsp;传统的 Android 开发模式存在一个严重问题：UI 控制器承担了太多责任。Activity/Fragment 不仅要处理用户交互、管理生命周期，还要负责数据加载、业务逻辑处理等，导致代码臃肿不堪，难以维护。而 ViewModel 的出现，恰好为我们提供了一个专门用于管理 UI 相关数据的类，它能够在配置变更时保持数据的一致性，大大简化了 UI 控制器的职责。</p>
+<hr>
+<h2 id="二-基础定义"><a href="#二-基础定义" class="headerlink" title="二.基础定义"></a>二.基础定义</h2><ul>
+<li>Android Jetpack ViewModel是一个专门用于管理 UI 相关数据的类，它将 UI 控制器与数据处理逻辑分离。</li>
+<li>ViewModel 的设计目的是存储和管理与 UI 相关的数据，使得数据能够在屏幕旋转等配置变更后继续存在。</li>
+<li>ViewModel 生命周期独立于 UI 控制器的配置变更，当 Activity 或 Fragment 被销毁并重新创建时，ViewModel 实例会被保留。</li>
+</ul>
+<hr>
+<h2 id="三-基础使用"><a href="#三-基础使用" class="headerlink" title="三. 基础使用"></a>三. 基础使用</h2><ul>
+<li>添加依赖：</li>
+</ul>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ViewModel核心库</span></span><br><span class="line"><span class="keyword">implementation</span> <span class="string">"androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4"</span></span><br><span class="line"><span class="comment">// ViewModelProviders依赖</span></span><br><span class="line"><span class="keyword">implementation</span> <span class="string">"androidx.activity:activity-ktx:1.8.2"</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>创建基础 ViewModel</li>
+</ul>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserProfileViewModel</span> : <span class="type">ViewModel</span></span>() &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 用于存储用户数据的LiveData</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> _userProfile = MutableLiveData&lt;UserProfile&gt;()</span><br><span class="line">    <span class="keyword">val</span> userProfile: LiveData&lt;UserProfile&gt; = _userProfile</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 用于表示加载状态的LiveData</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> _isLoading = MutableLiveData&lt;<span class="built_in">Boolean</span>&gt;()</span><br><span class="line">    <span class="keyword">val</span> isLoading: LiveData&lt;<span class="built_in">Boolean</span>&gt; = _isLoading</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 加载用户资料</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">loadUserProfile</span><span class="params">(userId: <span class="type">String</span>)</span></span> &#123;</span><br><span class="line">        _isLoading.value = <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 模拟网络请求</span></span><br><span class="line">        viewModelScope.launch &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">val</span> user = fetchUserProfileFromNetwork(userId)</span><br><span class="line">                _userProfile.value = user</span><br><span class="line">            &#125; <span class="keyword">catch</span> (e: Exception) &#123;</span><br><span class="line">                <span class="comment">// 处理异常</span></span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                _isLoading.value = <span class="literal">false</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 更新用户信息</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">updateUserInfo</span><span class="params">(user: <span class="type">UserProfile</span>)</span></span> &#123;</span><br><span class="line">        viewModelScope.launch &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">val</span> updatedUser = updateUserProfileInNetwork(user)</span><br><span class="line">                _userProfile.value = updatedUser</span><br><span class="line">            &#125; <span class="keyword">catch</span> (e: Exception) &#123;</span><br><span class="line">                <span class="comment">// 处理异常</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在 Activity 中使用 ViewModel</li>
+</ul>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> UserProfileActivity : <span class="constructor">AppCompatActivity()</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 使用viewModels()委托属性创建ViewModel</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> viewModel: UserProfileViewModel by view<span class="constructor">Models()</span></span><br><span class="line">    </span><br><span class="line">    override <span class="keyword">fun</span> on<span class="constructor">Create(<span class="params">savedInstanceState</span>: Bundle?)</span> &#123;</span><br><span class="line">        super.on<span class="constructor">Create(<span class="params">savedInstanceState</span>)</span></span><br><span class="line">        set<span class="constructor">ContentView(R.<span class="params">layout</span>.<span class="params">activity_user_profile</span>)</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 观察用户数据变化</span></span><br><span class="line">        viewModel.userProfile.observe(this) &#123; user -&gt;</span><br><span class="line">            update<span class="constructor">UserInterface(<span class="params">user</span>)</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 观察加载状态变化</span></span><br><span class="line">        viewModel.isLoading.observe(this) &#123; isLoading -&gt;</span><br><span class="line">            update<span class="constructor">LoadingState(<span class="params">isLoading</span>)</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 加载用户数据</span></span><br><span class="line">        <span class="keyword">val</span> userId = intent.get<span class="constructor">StringExtra(<span class="string">"USER_ID"</span>)</span> ?: <span class="string">"123456"</span></span><br><span class="line">        viewModel.load<span class="constructor">UserProfile(<span class="params">userId</span>)</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 设置更新按钮点击事件</span></span><br><span class="line">        btnUpdate.setOnClickListener &#123;</span><br><span class="line">            viewModel.update<span class="constructor">UserInfo(<span class="params">createUpdatedUserProfile</span>()</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">fun</span> update<span class="constructor">UserInterface(<span class="params">user</span>: UserProfile)</span> &#123;</span><br><span class="line">        tvName.text = user.name</span><br><span class="line">        tvEmail.text = user.email</span><br><span class="line">        tvAge.text = <span class="string">"年龄: $&#123;user.age&#125;"</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 加载头像</span></span><br><span class="line">        <span class="module-access"><span class="module"><span class="identifier">Glide</span>.</span></span><span class="keyword">with</span>(this)</span><br><span class="line">            .load(user.avatar)</span><br><span class="line">            .placeholder(<span class="module-access"><span class="module"><span class="identifier">R</span>.</span></span>drawable.default_avatar)</span><br><span class="line">            .into(ivAvatar)</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;在这个 Activity 中，我们使用viewModels()委托属性创建ViewModel,将其与该 Activity 绑定。然后，我们可以使用 updateUserInfo() 方法更新用户信息。通过调用 viewModel.userProfile.observe() 方法，我们可以在 LiveData 数据变化时更新 UI。这个案例演示了如何使用 Android Jetpack ViewModel 来管理 UI 相关的数据，并在 Activity 或 Fragment 重新创建时保持数据的完整性。</p>
+<hr>
+<h2 id="四-应用场景"><a href="#四-应用场景" class="headerlink" title="四.应用场景"></a>四.应用场景</h2><p>实际开发过程中可能使用 ViewModel 的使用场景：</p>
+<ul>
+<li>数据持久化：如果需要在应用程序的不同页面之间共享数据，并且希望在 Activity 或 Fragment 重新创建时保持数据的完整性，可以使用 ViewModel 来保存和管理数据</li>
+<li>处理屏幕旋转等配置更改：当应用程序的屏幕旋转或其他配置更改时，Activity 或 Fragment 可能会被销毁并重新创建，此时可以使用 ViewModel 来保存和恢复数据，避免因为生命周期变化而导致的数据丢失。</li>
+<li>分离 UI 与数据：将 UI 相关的数据与 UI 控件分离，避免在 Activity 或 Fragment 中处理数据逻辑的繁琐代码</li>
+<li>避免内存泄漏：将数据存储在 ViewModel 中可以避免由于对 Activity 或 Fragment 的引用而导致的内存泄漏，提高了应用程序的稳定性</li>
+</ul>
+<hr>
+<h2 id="五-源码分析"><a href="#五-源码分析" class="headerlink" title="五.源码分析"></a>五.源码分析</h2><p>&emsp;&emsp;在看源码之前，我们需要想几个问题。其一，viewmodel是怎么创建的；其二，viewmodel是怎么存储的；其三，viewmodel为什么可以实现旋转屏幕不丢失数据。带着这些问题，我们再从源码着手去看。</p>
+<h4 id="ViewModel类"><a href="#ViewModel类" class="headerlink" title="ViewModel类"></a>ViewModel类</h4><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">ViewModel</span> &#123;</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">boolean</span> mCleared = <span class="literal">false</span>;</span><br><span class="line">    <span class="comment">//在ViewModel将被清除时调用</span></span><br><span class="line">    <span class="comment">//当ViewModel观察了一些数据，可以在这里做解注册 防止内存泄漏</span></span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"WeakerAccess"</span>)</span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> onCleared() &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@MainThread</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">void</span> clear() &#123;</span><br><span class="line">        mCleared = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">if</span> (mBagOfTags != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (mBagOfTags) &#123;</span><br><span class="line">                <span class="keyword">for</span> (Object <span class="string">value :</span> mBagOfTags.values()) &#123;                 </span><br><span class="line">                    closeWithRuntimeException(value);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">       </span><br><span class="line">        <span class="keyword">if</span> (mCloseables != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (mCloseables) &#123;</span><br><span class="line">                <span class="keyword">for</span> (Closeable <span class="string">closeable :</span> mCloseables) &#123;</span><br><span class="line">                    closeWithRuntimeException(closeable);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        onCleared();</span><br><span class="line">    &#125;</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;我们在获取ViewModel实例时，并不是直接new的，而是通过ViewModelProvider来获取的，所以接下来我们来看下ViewModelProvider的源码</p>
+<h4 id="ViewModelProvider类"><a href="#ViewModelProvider类" class="headerlink" title="ViewModelProvider类"></a>ViewModelProvider类</h4><p>&emsp;&emsp;我们使用的是只需传ViewModelStoreOwner的构造方法，最后走到两个参数ViewModelStore、factory的构造方法。ViewModelStoreOwner是ViewModel存储器拥有者；ViewModelStore是ViewModel的存储器，用来存ViewModel的地方；Factory是创建ViewModel实例的工厂</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ViewModelProvider</span> <span class="keyword">private</span> <span class="keyword">constructor</span></span>(</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">val</span> mFactory: Factory,</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">val</span> mViewModelStore: ViewModelStore</span><br><span class="line">) &#123;</span><br><span class="line">    <span class="comment">// 缓存 ViewModel 实例的 HashMap</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">val</span> mViewModels = HashMap&lt;String, ViewModel&gt;()</span><br><span class="line">    <span class="keyword">companion</span> <span class="keyword">object</span> &#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">val</span> sCache = HashMap&lt;String, ViewModelProvider&gt;()</span><br><span class="line"></span><br><span class="line">        <span class="meta">@MainThreadfun</span> of(owner: ViewModelStoreOwner): ViewModelProvider &#123;</span><br><span class="line">            <span class="keyword">return</span> of(owner, FactoryHolder.DEFAULT_FACTORY)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@MainThreadfun</span> of(owner: ViewModelStoreOwner, factory: Factory): ViewModelProvider &#123;</span><br><span class="line">            <span class="keyword">val</span> store = owner.getViewModelStore()</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 先从缓存中查找ViewModelProvider实例</span></span><br><span class="line">			<span class="keyword">var</span> viewModelProvider = sCache[store.mKey]</span><br><span class="line">            <span class="keyword">if</span> (viewModelProvider == <span class="literal">null</span>) &#123;</span><br><span class="line">                viewModelProvider = ViewModelProvider(factory, store)</span><br><span class="line">                sCache[store.mKey] = viewModelProvider</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> viewModelProvider</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 返回指定key的ViewModel实例，如果不存在则通过Factory工厂获取</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">     </span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="type">&lt;T : ViewModel?&gt;</span> <span class="title">get</span><span class="params">(key: <span class="type">String</span>, modelClass: <span class="type">Class</span>&lt;<span class="type">T</span>&gt;)</span></span>: T &#123;</span><br><span class="line">    <span class="keyword">var</span> viewModel = mViewModels[key]</span><br><span class="line">    <span class="keyword">if</span> (modelClass.isInstance(viewModel)) &#123;</span><br><span class="line">        <span class="meta">@Suppress(<span class="meta-string">"UNCHECKED_CAST"</span>)</span></span><br><span class="line">        <span class="keyword">return</span> viewModel <span class="keyword">as</span> T</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建新的ViewModel实例，同事将这个实例添加到缓存当中</span></span><br><span class="line">    viewModel = mFactory.create(modelClass)</span><br><span class="line">    mViewModels[key] = viewModel</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> viewModel</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Factory接口，用于创建ViewModel的实例</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Factory</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T : ViewModel?&gt;</span> <span class="title">create</span><span class="params">(modelClass: <span class="type">Class</span>&lt;<span class="type">T</span>&gt;)</span></span>: T</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * FactoryHolder类，用于提供默认的Factory工厂实现</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">object</span> FactoryHolder &#123;</span><br><span class="line">    <span class="keyword">val</span> DEFAULT_FACTORY: Factory = <span class="keyword">object</span> : Factory &#123;</span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T : ViewModel?&gt;</span> <span class="title">create</span><span class="params">(modelClass: <span class="type">Class</span>&lt;<span class="type">T</span>&gt;)</span></span>: T &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> modelClass.newInstance()</span><br><span class="line">            &#125; <span class="keyword">catch</span> (e: IllegalAccessException) &#123;</span><br><span class="line">                <span class="keyword">throw</span> RuntimeException(e)</span><br><span class="line">            &#125; <span class="keyword">catch</span> (e: InstantiationException) &#123;</span><br><span class="line">                <span class="keyword">throw</span> RuntimeException(e)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;ViewModelProvider 类包含了一个 HashMap，用于缓存 ViewModel 实例。<br><br>&emsp;&emsp;of() 方法用于创建 ViewModelProvider 实例，并通过 ViewModelStore 对象来区分不同的 Activity 或 Fragment。get() 方法用于返回指定 key 的 ViewModel 实例，并在缓存中查找是否存在对应的实例。如果缓存中不存在该实例，则调用 Factory工厂 接口来创建一个新的 ViewModel 实例，并将其添加到缓存中。<br><br>&emsp;&emsp;Factory 工厂接口提供了一个 create() 方法，用于创建 ViewModel 实例。FactoryHolder 类用于提供默认的 Factory 实现，它使用 Java 的反射机制来创建 ViewModel 实例。 ViewModelStore 和 ViewModelProvider 都是线程安全的，可以在多个线程中同时使用。<br><br>&emsp;&emsp;所以，在多线程的环境下，我们可以使用 ViewModel 来缓存和共享数据，从而减少数据的重复加载和提升应用程序的性能。</p>
+<h4 id="ViewModelStoreOwner"><a href="#ViewModelStoreOwner" class="headerlink" title="ViewModelStoreOwner"></a>ViewModelStoreOwner</h4><figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="symbol">ViewModelStoreOwner</span> &#123;</span><br><span class="line">	<span class="comment">//获取ViewModelStore，其实就是获取ViewModel存储器</span></span><br><span class="line">    ViewModelStore getViewModelStore();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;ViewModelStoreOwner是个接口，实现类其实就是Activity，也就是ViewModel存储器的拥有者。</p>
+<h4 id="ViewModelStore"><a href="#ViewModelStore" class="headerlink" title="ViewModelStore"></a>ViewModelStore</h4><figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> class ViewModelStore &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">HashMap</span>&lt;<span class="keyword">String</span>, ViewModel&gt; mMap = <span class="keyword">new</span> <span class="keyword">HashMap</span>&lt;&gt;();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">void</span> put(<span class="keyword">String</span> <span class="built_in">key</span>, ViewModel viewModel) &#123;</span><br><span class="line">        ViewModel oldViewModel = mMap.put(<span class="built_in">key</span>, viewModel);</span><br><span class="line">        <span class="keyword">if</span> (oldViewModel != <span class="keyword">null</span>) &#123;</span><br><span class="line">            oldViewModel.onCleared();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> ViewModel <span class="built_in">get</span>(<span class="keyword">String</span> <span class="built_in">key</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> mMap.<span class="built_in">get</span>(<span class="built_in">key</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    Set&lt;<span class="keyword">String</span>&gt; keys() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> HashSet&lt;&gt;(mMap.keySet());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="built_in">clear</span>() &#123;</span><br><span class="line">        <span class="keyword">for</span> (ViewModel vm : mMap.values()) &#123;</span><br><span class="line">            vm.<span class="built_in">clear</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        mMap.<span class="built_in">clear</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;ViewModelStore代码很简单，他其中有一个HashMap，viewModel作为Value存储在HashMap中。我们需要注意的就是clear()方法，如果Activity销毁后不会重建，那么就需要调用此方法。</p>
+<h2 id="六-有关viewmodel的思考"><a href="#六-有关viewmodel的思考" class="headerlink" title="六.有关viewmodel的思考"></a>六.有关viewmodel的思考</h2><ul>
+<li><p>viewmodel横屏切换不会丢失数据的原因：</p>
+<ul>
+<li>1.ViewModel 在横竖屏切换时不丢失数据，是因为它的生命周期与 Activity 解耦。</li>
+<li>2.当配置变更导致 Activity 销毁时，系统会保留关联的 ViewModelStore 对象，并在重建后的 Activity 中恢复它。</li>
+<li>3.这使得 ViewModel 实例得以存活，从而保持其内部数据。</li>
+<li>4.这一机制由 ComponentActivity 内部处理，我们只需通过 ViewModelProvider 获取实例即可。</li>
+<li>5.但是我觉得可能需要考虑一个问题，ViewModel 只存活于进程内，若系统因资源不足杀进程，仍需结合 onSaveInstanceState 持久化关键数据。</li>
+</ul>
+</li>
+<li><p>onSaveInstanceState()用于让开发者保存一些数据，以方便界面销毁重建时恢复数据。那么和 使用ViewModel恢复数据 有哪些区别呢</p>
+<ul>
+<li>1.onSaveInstanceState的调用遵循一个重要原则，即当系统“未经你许可”时销毁了你的activity，则onSaveInstanceState会被系统调用。</li>
+<li>2.比如 onSaveInstanceState会在用户按下home键，或者长按Home键运行其他程序，或者按下电源键息屏，以及屏幕方向切换时调用。但是viewmodel就只会在因配置更改界面销毁重建的时候恢复数据。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="七-小结"><a href="#七-小结" class="headerlink" title="七.小结"></a>七.小结</h2><p>&emsp;&emsp;老规矩，看完源码，针对性的做一个小结：</p>
+<ul>
+<li>ViewModel类是一个抽象类，包含了一个onCleared()方法，该方法会在ViewModel不再被使用时被调用，用于释放资源和清除状态。</li>
+<li>ViewModelProvider是一个帮助类，用于获取ViewModel实例。</li>
+<li>ViewModelProvider.Factory是一个接口，用于创建ViewModel实例。</li>
+<li>每个Activity都会绑定一个ViewModelStore，ViewModelStore通过HashMap保存ViewModel和String名称。ViewModel的持久化依赖ViewModelStore的存储和获取。<br>&emsp;&emsp;依旧贴一个<a href="https://developer.android.com/topic/libraries/architecture/viewmodel?hl=zh-cn" target="_blank" rel="noopener">官方文档</a>方便后续查看，敬请期待下一篇Jetpack文章。</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">插件化</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">activity启动流程</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Jetpack</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
-        </div>
-        <div class="clearfix"></div>
-    </header>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BLiveData%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android业务架构Jetpack四件套之LiveData篇（二）</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -213,9 +320,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,
