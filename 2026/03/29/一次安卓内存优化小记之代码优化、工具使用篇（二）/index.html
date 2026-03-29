@@ -14,13 +14,14 @@
 <meta property="og:url" content="http://yoursite.com/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E3%80%81%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
 <meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;本篇是安卓内存优化的第二篇，第一篇理论篇主要阐述的是 “为何优化” 与“优化什么”，那么本篇将重点记录我是 “如何优化” 与 “如何验证”的。一方面，从代码层面拆解常见的内存浪费场景，梳理可直接落地的优化技巧（如对象复用、资源释放、引用管理等）；另一方面，我也会讲述一下Android 开发中必备的内存分析工具（如 Memory Profiler、LeakCanary">
+<meta property="og:image" content="https://lsd108.github.io/image/%E5%BC%95%E7%94%A8.jpg">
 <meta property="og:image" content="https://lsd108.github.io/image/%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96.png">
 <meta property="article:published_time" content="2026-03-29T08:37:29.000Z">
-<meta property="article:modified_time" content="2026-03-29T11:23:00.592Z">
+<meta property="article:modified_time" content="2026-03-29T11:46:27.642Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="性能优化">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://lsd108.github.io/image/%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96.png">
+<meta name="twitter:image" content="https://lsd108.github.io/image/%E5%BC%95%E7%94%A8.jpg">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -163,7 +164,7 @@
         <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;本篇是安卓内存优化的第二篇，第一篇理论篇主要阐述的是 “为何优化” 与“优化什么”，那么本篇将重点记录我是 “如何优化” 与 “如何验证”的。一方面，从代码层面拆解常见的内存浪费场景，梳理可直接落地的优化技巧（如对象复用、资源释放、引用管理等）；另一方面，我也会讲述一下Android 开发中必备的内存分析工具（如 Memory Profiler、LeakCanary 等）的使用技巧。</p>
 <hr>
 <h2 id="二-内存优化策略"><a href="#二-内存优化策略" class="headerlink" title="二.内存优化策略"></a>二.内存优化策略</h2><p>&emsp;&emsp;没有内存泄漏，并不意味着内存就不需要优化。由于物理设备的存储空间有限， Android 系统对每个应用也都分配了有限的堆内存，因此使用最小内存对象或者资源可以减少内存开销，同时让 GC 更高效地回收资源，让堆内存保持充足的可用内存，使应用更稳定高效地运行。</p>
-<h4 id="1-对象引用"><a href="#1-对象引用" class="headerlink" title="1.对象引用"></a>1.对象引用</h4><p>&emsp;&emsp;为了便于对象被回收，常常需要根据实际需要与对象建立不同程度的引用，这里简单介绍一下。Java 中的对象引用方式有如下4种：<br>| 引用类型 | 调用方式   | GC                     | 是否内存泄漏 |<br>| —- | —— | ———————- | —— |<br>| 强引用  | 直接调用   | 不回收，宁可抛出异常也不回收强引用指向的对象 | 是      |<br>| 软引用  | .get() | 视内存情况回收，内存不足时，GC 会回收   | 否      |<br>| 弱引用  | .get() | GC 了就回收，内存足不足          | 不可能    |<br>| 虚引用  | null   | 任何时候都可能被回收，相当于没有引用一样   | 否      |</p>
+<h4 id="1-对象引用"><a href="#1-对象引用" class="headerlink" title="1.对象引用"></a>1.对象引用</h4><p>&emsp;&emsp;为了便于对象被回收，常常需要根据实际需要与对象建立不同程度的引用，这里简单介绍一下。Java 中的对象引用方式有如下4种：<br><br /><img src="https://lsd108.github.io/image/%E5%BC%95%E7%94%A8.jpg" alt="class"></p>
 <p><br/>&emsp;&emsp;对于强引用的对象，即使是内存不够用了，GC 时也不会被 JVM 作为垃圾回收掉，只会抛出 OutOfMemmory异常，所以我们在解决内存泄漏的问题时，很多情况下需要处理强引用的问题</p>
 <h4 id="2-优先使用基本类型，减少自动装箱"><a href="#2-优先使用基本类型，减少自动装箱" class="headerlink" title="2. 优先使用基本类型，减少自动装箱"></a>2. 优先使用基本类型，减少自动装箱</h4><p>&emsp;&emsp;在没有特殊原因的情况下，尽量使用基本数据类型来代替封装数据类型，int 比 Integer 要更加有效，其它数据类型也是一样。<br>&emsp;&emsp;自动装箱的核心就是把基础数据类型转换成对应的复杂类型。在自动装箱转化时，都会产生一个新的对象，这样就会产生更多的内存和性能开销。如 int 只占4字节，而 Integer 对象有16字节，特别是 HashMap 这类容器，进行增、删、改、查操作时，都会产生大量的自动装箱操作。</p>
 <h4 id="3-内存复用"><a href="#3-内存复用" class="headerlink" title="3. 内存复用"></a>3. 内存复用</h4><p>&emsp;&emsp;对于内存复用，有效利用系统自带的资源，对象池，Bitmap对象的复用，有如下三种可行的方式：</p>
@@ -419,14 +420,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
               </li>
              
@@ -435,11 +428,19 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">AssetManager</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
               </li>
             
             <div class="clearfix"></div>
