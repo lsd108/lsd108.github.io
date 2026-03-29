@@ -14,18 +14,12 @@
 <meta property="og:url" content="http://yoursite.com/2020/01/13/%E6%97%A0%E7%97%95%E5%9F%8B%E7%82%B9ASM%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%A1%88/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
 <meta property="og:description" content="一.无痕埋点概述&amp;emsp;&amp;emsp;无痕埋点指预先知道手机用户的所有行为数据，然后再根据实际分析需求从中提取行为数据  二.实现方案缺点比较 静态代理  &amp;emsp;&amp;emsp;通过GradlePlugin在编译期间“插入”或者修改代码(.class文件)。在原处理逻辑的前面或者后面“插入”相应的埋点代码，从而达到自动埋点的效果。主要的方案有AspectJ、ASM  动态代理  &amp;emsp;&amp;">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/d420140854673af0474d7434f0ad230e.jpeg">
-<meta property="og:image" content="https://lu-test.oss-cn-hangzhou.aliyuncs.com/uploads/3d167b909544b178ee05523bf08a1536.png">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/b5e32a5ae3badce8f878bfa2a953c740.jpeg">
-<meta property="og:image" content="https://s.changjinglu.net/uploads/d427ca57383d9c5422a26d8b114d9162.jpeg">
 <meta property="article:published_time" content="2020-01-13T13:29:22.000Z">
-<meta property="article:modified_time" content="2020-03-17T15:45:13.736Z">
+<meta property="article:modified_time" content="2026-03-29T10:13:00.582Z">
 <meta property="article:author" content="李思达">
 <meta property="article:tag" content="无痕埋点">
 <meta property="article:tag" content="ASM">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -186,7 +180,7 @@
 </ul>
 <hr>
 <h2 id="四-具体类介绍"><a href="#四-具体类介绍" class="headerlink" title="四.具体类介绍"></a>四.具体类介绍</h2><ul>
-<li>lutrack类介绍<br><br/><img src="https://s.changjinglu.net/uploads/dd7ede6931d6aa9c877a3723f0bddad8.jpeg" alt="class">   <ul>
+<li>lutrack类介绍<ul>
 <li>Lutracker：埋点类，封装基础埋点参数，暴露track方法给插件<br/></li>
 <li>TrackDataPrivate：控件私有属性获取类，提供获取控件类型，获取控件文本内容，获取view所属的activivty等方法<br/></li>
 <li>TrackViewOnClick：xml点击interface封装（上层的点击事件倘若使用xml的点击实现，无法通过普通插桩解决，需要独立封装接口）<br/></li>
@@ -195,16 +189,13 @@
 </li>
 </ul>
 <ul>
-<li>trackPlugin插件类介绍<br><br/><img src="https://s.changjinglu.net/uploads/d420140854673af0474d7434f0ad230e.jpeg" alt="class"> <ul>
+<li>trackPlugin插件类介绍<ul>
 <li>TrackDefaultMethodVisitor：实现了MethodVisitor接口，主要负责”拜访”方法的信息，用来进行具体的方法字节码操作<br/></li>
 <li>TrackClassVisitor：主要负责”拜访”类成员信息。其中包括标记在类上的注解，类的构造方法,类的字段，类的方法，静态代码块<br/></li>
 <li>TrackModifier：提供当前的class文件和jar文件，提供input输出文件<br/></li>
 <li>TrackTransform：定义当前task的名称，需要处理的数据类型，以及要操作内容的范围</li>
 </ul>
 </li>
-</ul>
-<ul>
-<li>完整的实现类图<br><img src="https://lu-test.oss-cn-hangzhou.aliyuncs.com/uploads/3d167b909544b178ee05523bf08a1536.png" alt="class"></li>
 </ul>
 <hr>
 <h2 id="五-插件具体方法介绍"><a href="#五-插件具体方法介绍" class="headerlink" title="五.插件具体方法介绍"></a>五.插件具体方法介绍</h2><ul>
@@ -361,9 +352,6 @@ MethodVisitor visitMethod(int access, String name, String desc, String signature
 <li>1.ASM方案目前不支持lambda表达式,其余各类点击事件的实现均支持，已测试通过</li>
 <li>2.插件编译 是在Android App 打包成 .dex 文件之前的编译过程中操作 .class 文件。所以测试时会导致编译时间过长，目前已初步添加gradle编译优化，减少编译时间</li>
 <li>3.我们lib中原本针对多次点击使用aspectJ封装了一个多次点击的库。此次上层集成无痕埋点库时，发现singleClick会生成多个空的jar,导致埋点编译失败，后续需要将singleClick也使用ASM方式实现</li>
-</ul>
-<p><img src="https://s.changjinglu.net/uploads/b5e32a5ae3badce8f878bfa2a953c740.jpeg" alt="class"></p>
-<ul>
 <li>4.关于view的唯一标识，其实并没有一个很好的解决方案。常用的方案也是ViewPath，但也会有一系列的兼容性问题，比如同一个控件，不同的系统版本、不同的ROM、不同的App版本，都有可能发生变化。届时需要针对我们目前的各种板子做一个调试，否则item_id的实现就没有意义</li>
 </ul>
 <hr>
@@ -392,7 +380,7 @@ MethodVisitor visitMethod(int access, String name, String desc, String signature
 </ul>
 <hr>
 <h2 id="九-问题解决记录"><a href="#九-问题解决记录" class="headerlink" title="九.问题解决记录"></a>九.问题解决记录</h2><ul>
-<li>1.ASM插桩和aspectJ的冲突<br> <br/>解决方法是：缩小aspectJ的编译覆盖范围。以后在上层应用中如果添加一个新的module,不涉及到ui点击方面的话，可以将类名添加至gradle中，这样就不会被aspectJ重新编译，也能加快编译速度<br><img src="https://s.changjinglu.net/uploads/d427ca57383d9c5422a26d8b114d9162.jpeg" alt="class"></li>
+<li>1.ASM插桩和aspectJ的冲突<br> <br/>解决方法是：缩小aspectJ的编译覆盖范围。以后在上层应用中如果添加一个新的module,不涉及到ui点击方面的话，可以将类名添加至gradle中，这样就不会被aspectJ重新编译，也能加快编译速度</li>
 </ul>
 
       
