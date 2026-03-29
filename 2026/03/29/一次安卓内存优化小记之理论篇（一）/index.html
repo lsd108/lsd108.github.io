@@ -6,21 +6,19 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>okhttp源码分析之请求整体概述（一） | Lsd&#39;s blog</title>
+  <title>一次安卓内存优化小记之理论篇（一） | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。&amp;emsp;&amp;emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;在 Android 开发中，内存优化是一个永恒的话题。理论知识很重要，但实战经验更为珍贵。本小节将从理论知识出发，逐步介绍 Android 内存优化的实战技巧、工具使用和实践，也算是一次知识回顾的记录。  二.内存管理机制&amp;emsp;&amp;emsp;在内存管理上，JVM 拥有垃圾内存回收的机制，自身会在虚拟机层面自动分配和释放内存，因此不需要像使用 C&#x2F;C++ 一样在代">
 <meta property="og:type" content="article">
-<meta property="og:title" content="okhttp源码分析之请求整体概述（一）">
-<meta property="og:url" content="http://yoursite.com/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
+<meta property="og:title" content="一次安卓内存优化小记之理论篇（一）">
+<meta property="og:url" content="http://yoursite.com/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。&amp;emsp;&amp;emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）">
-<meta property="og:image" content="https://s2.loli.net/2022/05/03/G2RTQixVpD9otW1.png">
-<meta property="article:published_time" content="2020-05-18T06:29:20.000Z">
-<meta property="article:modified_time" content="2022-05-03T13:29:49.733Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;在 Android 开发中，内存优化是一个永恒的话题。理论知识很重要，但实战经验更为珍贵。本小节将从理论知识出发，逐步介绍 Android 内存优化的实战技巧、工具使用和实践，也算是一次知识回顾的记录。  二.内存管理机制&amp;emsp;&amp;emsp;在内存管理上，JVM 拥有垃圾内存回收的机制，自身会在虚拟机层面自动分配和释放内存，因此不需要像使用 C&#x2F;C++ 一样在代">
+<meta property="article:published_time" content="2026-03-29T08:36:29.000Z">
+<meta property="article:modified_time" content="2026-03-29T08:36:52.727Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="okhttp">
+<meta property="article:tag" content="性能优化">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://s2.loli.net/2022/05/03/G2RTQixVpD9otW1.png">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -140,281 +138,84 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-okhttp源码分析之请求整体概述（一）" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-一次安卓内存优化小记之理论篇（一）" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      okhttp源码分析之请求整体概述（一）
+      一次安卓内存优化小记之理论篇（一）
     </h1>
   
 
         
-        <a href="/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-05-18T06:29:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-18</time>
+        <a href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-29T08:36:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-29</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者从事android开发已经快四年了，一直想针对目前主流网络框架的源码okhttp做一个分析，还记得大学初学安卓时，是自己使用HttpURLConnetion简单封装的。<br><br>&emsp;&emsp;okhttp是Square公司开源的，本次一系列的okhttp源码分析基于目前最新的4.6.0版本（OkHttp4正式版发布后，就从Java切换到Kotlin）</p>
-<a id="more"></a>
-
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;在 Android 开发中，内存优化是一个永恒的话题。理论知识很重要，但实战经验更为珍贵。本小节将从理论知识出发，逐步介绍 Android 内存优化的实战技巧、工具使用和实践，也算是一次知识回顾的记录。</p>
 <hr>
-<h2 id="二-okhttp的使用"><a href="#二-okhttp的使用" class="headerlink" title="二.okhttp的使用"></a>二.okhttp的使用</h2><pre><code>private fun okhttpTest() {
-    //创建OKHttpClient客户端
-    val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .writeTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .build()
-    //创建Request对象
-    val request = Request.Builder().url(&quot;http://www.baidu.com&quot;).get().build()
-    //okhttp同步请求execute
-    val response = okHttpClient.newCall(request).execute()
-    //okhttp异步请求enqueue
-    okHttpClient.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-        }
-
-        override fun onResponse(call: Call, response: Response) {
-        }
-    })
-}</code></pre><p>&emsp;&emsp;网络请求的使用很简单，首先创建一个OKHttpClient客户端，然后创建一个Request对象，我们发现二者都是使用Builder模式。然后同步请求会直接返回一个response对象给我们，异步请求会通过接口回调的方式返回response</p>
-<hr>
-<h2 id="三-从OkHttpClient出发"><a href="#三-从OkHttpClient出发" class="headerlink" title="三.从OkHttpClient出发"></a>三.从OkHttpClient出发</h2><pre><code>//http请求的分发器
-internal var dispatcher: Dispatcher = Dispatcher()
-//连接池：1.请求的url相同时可以复用 2.减少延迟并节省内存
-internal var connectionPool: ConnectionPool = ConnectionPool()
-//拦截器集合
-internal val interceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
-//网络请求拦截器集合
-internal val networkInterceptors: MutableList&lt;Interceptor&gt; = mutableListOf()
-//网络请求的事件监听器，监听流程中的调用，代理选择，连接等各种状态的开始以及结束
-internal var eventListenerFactory: EventListener.Factory = EventListener.NONE.asFactory()
-//连接失败时候是否重试
-internal var retryOnConnectionFailure = true
-//代理模式的接口，在发送任何连接请求之前，OkHttp总是调用代理身份验证器，以便它可以准备抢先认证
-internal var authenticator: Authenticator = Authenticator.NONE
-//是否重定向
-internal var followRedirects = true
-//ssl是否重定向
-internal var followSslRedirects = true
-//提供cookie的持久化策略
-internal var cookieJar: CookieJar = CookieJar.NO_COOKIES
-//response文件缓存
-internal var cache: Cache? = null
-//dns设置
-internal var dns: Dns = Dns.SYSTEM
-//代理设置
-internal var proxy: Proxy? = null
-//代理选择器
-internal var proxySelector: ProxySelector? = null
-//代理ip的一个属性
-internal var proxyAuthenticator: Authenticator = Authenticator.NONE
-//socket工厂 
-internal var socketFactory: SocketFactory = SocketFactory.getDefault()
-//sslSocket工厂
-internal var sslSocketFactoryOrNull: SSLSocketFactory? = null
-//证书信任管理器，可用于验证安全的远程端
-internal var x509TrustManagerOrNull: X509TrustManager? = null
-//连接说明，建立SSL/TLS连接时会使用，其中包含支持的TLS版本以及加密套件等
-internal var connectionSpecs: List&lt;ConnectionSpec&gt; = DEFAULT_CONNECTION_SPECS
-//连接时选择的协议 HTTP_1_0、HTTP_1_1、HTTP_2等
-internal var protocols: List&lt;Protocol&gt; = DEFAULT_PROTOCOLS
-//域名验证，用来校验请求域名与服务端返回的证书中的域名是否匹配
-internal var hostnameVerifier: HostnameVerifier = OkHostnameVerifier
-//设置信任指定的证书
-internal var certificatePinner: CertificatePinner = CertificatePinner.DEFAULT
-//证书链的清除器
-internal var certificateChainCleaner: CertificateChainCleaner? = null
-//调用超时时间
-internal var callTimeout = 0
-//连接超时时间
-internal var connectTimeout = 10_000
-//读取超时时间
-internal var readTimeout = 10_000
-//写入超时时间
-internal var writeTimeout = 10_000
-//ping的间隔
-internal var pingInterval = 0
-//WebSocket被压缩的最小消息大小
-internal var minWebSocketMessageToCompress = RealWebSocket.DEFAULT_MINIMUM_DEFLATE_SIZE
-//路由数据库
-internal var routeDatabase: RouteDatabase? = null</code></pre><p>&emsp;&emsp;上文已经说到OkHttpClient采用构建者模式构建，我们将里面详细的参数都做了一个说明。在读源码的过程中，我也看了OkHttpClient的类注释，我们再使用的过程中，最好创建一个单例的client实例，因为每个client都会持有它自己的连接池和线程池，重用连接和线程可以减少延迟并节省内存消耗。</p>
-<hr>
-<h2 id="三-request的构建细节"><a href="#三-request的构建细节" class="headerlink" title="三.request的构建细节"></a>三.request的构建细节</h2><pre><code>//请求的链接
-internal var url: HttpUrl? = null
-//请求的方法，post、get、delete等
-internal var method: String
-//请求中的头文件
-internal var headers: Headers.Builder
-//请求体
-internal var body: RequestBody? = null</code></pre><p>&emsp;&emsp;reques顾名思义就是请求的意思，上述参数包含了一个网络请求的一些基本要素</p>
-<hr>
-<h2 id="四-newCall创建Call对象"><a href="#四-newCall创建Call对象" class="headerlink" title="四.newCall创建Call对象"></a>四.newCall创建Call对象</h2><pre><code>//OkHttpClient
-override fun newCall(request: Request): Call = RealCall(this, request, forWebSocket = false)
-//RealCall
-class RealCall(
-    val client: OkHttpClient,
-    /** The application&apos;s original request unadulterated by redirects or auth headers. */
-    val originalRequest: Request,
-    val forWebSocket: Boolean
-) : Call {
-    ...
-}</code></pre><p><br>&emsp;&emsp;创建client之后，我们通过newCall方法传入一个Request 构造出一个Call对象，在源码中我们发现newCall实际上是调用了RealCall(this, request, forWebSocket=false).第三个参数是代表不支持webSocket，原因是本身是http请求，而RealCall则是实现了call接口。</p>
-<hr>
-<h2 id="五-发起网络请求"><a href="#五-发起网络请求" class="headerlink" title="五.发起网络请求"></a>五.发起网络请求</h2><p>&emsp;&emsp;上文我们已经讲述了client，request以及call对象的构建，在讲述网络请求源码前，首先上一张图帮大家梳理一下思路。<br><br><img src="https://s2.loli.net/2022/05/03/G2RTQixVpD9otW1.png" alt="okhttp的getResponseWithInterceptorChain__流程.png"><br><br>&emsp;&emsp;接下来我就会从请求出发，深入源码给大家分析一下</p>
-<h3 id="同步请求流程"><a href="#同步请求流程" class="headerlink" title="同步请求流程"></a>同步请求流程</h3><pre><code>override fun execute(): Response {
-    synchronized(this) {
-       check(!executed) { &quot;Already Executed&quot; }
-       executed = true
-    }
-    timeout.enter()
-    callStart()
-    try {
-        client.dispatcher.executed(this)
-        return getResponseWithInterceptorChain()
-    } finally {
-        client.dispatcher.finished(this)
-    }
-}</code></pre><p>&emsp;&emsp;我们可以看到，使用同步锁保证每个请求只能执行一次，然后调用dispatcher的executed方法，进入执行状态，最后通过一系列的拦截器返回最终的Response。我们看一下getResponseWithInterceptorChain()方法</p>
-<pre><code>@Throws(IOException::class)
-internal fun getResponseWithInterceptorChain(): Response {
-    //构建拦截器集合
-    val interceptors = mutableListOf&lt;Interceptor&gt;()
-    interceptors += client.interceptors
-    //管理重试和重定向的拦截器
-    interceptors += RetryAndFollowUpInterceptor(client)
-    //桥梁拦截器：在请求中添加网络层的参数，调用网络，解析出用户请求的结果
-    interceptors += BridgeInterceptor(client.cookieJar)
-    //缓存拦截器：读取缓存，更新缓存
-    interceptors += CacheInterceptor(client.cache)
-    //连接拦截器
-    interceptors += ConnectInterceptor
-    if (!forWebSocket) {
-        //网络拦截器（只在不是WebSocket的情况添加）
-        interceptors += client.networkInterceptors
-    }
-    //服务请求拦截器
-    interceptors += CallServerInterceptor(forWebSocket)
-
-    ...
-
-    var calledNoMoreExchanges = false
-    try {
-        val response = chain.proceed(originalRequest)
-        ...
-    }
-}
-
-@Throws(IOException::class)
-override fun proceed(request: Request): Response {
-    check(index &lt; interceptors.size)
-    ...
-
-    // Call the next interceptor in the chain.
-    val next = copy(index = index + 1, request = request)
-   //获取当前的拦截器
-   val interceptor = interceptors[index]
-
-   @Suppress(&quot;USELESS_ELVIS&quot;)
-   //获取到response
-    val response = interceptor.intercept(next) ?: throw NullPointerException(
-       &quot;interceptor $interceptor returned null&quot;)
-
-    if (exchange != null) {
-       check(index + 1 &gt;= interceptors.size || next.calls == 1) {
-       &quot;network interceptor $interceptor must call proceed() exactly once&quot;
-       }
-    }
-
-   check(response.body != null) { &quot;interceptor $interceptor returned a response with no body&quot; }
-
-   return response
-}</code></pre><p>&emsp;&emsp;getResponseWithInterceptorChain()方法，我们简单看了一下，我只贴出了重要的代码，我们可以看到它内部是通过责任链的模式调用拦截器，简单总结一下：</p>
+<h2 id="二-内存管理机制"><a href="#二-内存管理机制" class="headerlink" title="二.内存管理机制"></a>二.内存管理机制</h2><p>&emsp;&emsp;在内存管理上，JVM 拥有垃圾内存回收的机制，自身会在虚拟机层面自动分配和释放内存，因此不需要像使用 C/C++ 一样在代码中分配和释放某一块内存。Android 系统的内存管理类似于 JVM，通过 new 关键字来为对象分配内存，内存的释放由 GC 来回收。并且系统在内存管理上有一个 Generational Heap Memory 模型，当内存达到某一个阈值时，系统会根据不同的规则自动释放可以释放的内存。<br>&emsp;&emsp;Java 虚拟机所管理的内存包含了5个区域：程序计数器，虚拟机栈，本地方法栈，Java 堆，方法区：</p>
 <ul>
-<li>创建interceptors拦截器集合</li>
-<li>往集合中添加自定义的拦截器以及内置拦截器</li>
-<li>通过proceed方法获取到response</li>
+<li>方法区：是被线程共享的区域，一般用来存储不容易改变的数据（也被称为「永久代」）。存储了每个类的信息、静态变量、常量以及编译器编译后的代码等内容。当方法区无法满足内存分配需求时，将抛出 OOM 异常。</li>
+<li>Java虚拟机栈：栈内存，它是 Java 方法执行的内存模型。Java 栈中存放的是一个个的栈帧，每个栈帧对应的是一个被调用的方法。存放的是局部变量表、操作数栈、方法返回地址等信息，会指向堆中真正存储的对象。每一个方法从调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中入栈到出栈的过程。扩展时无法申请到足够的内存，就会抛出 OOM 异常。</li>
+<li>本地方法栈：与 Java 虚拟机栈的作用和原理非常相似，区别在本地方法栈为执行 Native 方法服务的，而 Java 虚拟机栈是为执行 Java 方法服务的。本地方法栈区域也会抛出 OOM 异常。</li>
+<li>Java堆：堆内存，内存最大区域，被所有线程共享，唯一目的就是存放对象实例，几乎所有的对象实例都在这里分配。它是 Java 的垃圾收集器管理的主要区域，内存泄漏也都是发生在这个区域。当无法再扩展时，将会抛出 OOM 异常。</li>
+<li>程序计数器：是一块较小的内存空间，也称为 PC 寄存器。它保存的是程序当前执行的指令的地址，用于指示执行哪条指令。这块内存中存储的数据所占空间的大小不会随程序的执行而发生改变，此内存区域不会发生内存溢出问题。</li>
 </ul>
-<h3 id="异步请求流程"><a href="#异步请求流程" class="headerlink" title="异步请求流程"></a>异步请求流程</h3><pre><code>//RealCall
-override fun enqueue(responseCallback: Callback) {
-    synchronized(this) {
-        check(!executed) { &quot;Already Executed&quot; }
-        executed = true
-    }
-    callStart()
-    client.dispatcher.enqueue(AsyncCall(responseCallback))
-}
-//Dispatcher
-internal fun enqueue(call: AsyncCall) {
-    synchronized(this) {
-        readyAsyncCalls.add(call)
-
-        if (!call.call.forWebSocket) {
-            val existingCall = findExistingCallWithHost(call.host)
-            if (existingCall != null) call.reuseCallsPerHostFrom(existingCall)
-        }
-    }
-    promoteAndExecute()
-}</code></pre><p>&emsp;&emsp;在RealCall中依旧是一个同步锁保证网络请求的唯一性，最后会调用Dispatcher中的enqueue方法。在Dispatcher中首先会将call添加到readyAsyncCalls集合这是一个异步请求等待队列；然后调用promoteAndExecute(),所以继续看下去。</p>
-<pre><code>private fun promoteAndExecute(): Boolean {
-this.assertThreadDoesntHoldLock()
-
-val executableCalls = mutableListOf&lt;AsyncCall&gt;()
-val isRunning: Boolean
-    synchronized(this) {
-        val i = readyAsyncCalls.iterator()
-        //循环获取到当前的请求任务
-        while (i.hasNext()) {
-            val asyncCall = i.next()
-            //判断是否超过最大数量
-            if (runningAsyncCalls.size &gt;= this.maxRequests) break // Max capacity.
-            if (asyncCall.callsPerHost.get() &gt;= this.maxRequestsPerHost) continue // Host max capacity.
-
-            i.remove()
-            asyncCall.callsPerHost.incrementAndGet()
-            //将请求任务添加到executableCalls
-            executableCalls.add(asyncCall)
-             //将请求任务添加到异步请求集合中
-            runningAsyncCalls.add(asyncCall)
-        } 
-        isRunning = runningCallsCount() &gt; 0
-    }  
-   //通过遍历，调用executeOn()
-   for (i in 0 until executableCalls.size) {
-        val asyncCall = executableCalls[i]
-        asyncCall.executeOn(executorService)
-    }
-    return isRunning
-}
-
-fun executeOn(executorService: ExecutorService) {
-    client.dispatcher.assertThreadDoesntHoldLock()
-
-    var success = false
-    try {
-        //通过executorService的execute()方法来执行异步请求
-        executorService.execute(this)
-        success = true
-    } catch (e: RejectedExecutionException) {
-        val ioException = InterruptedIOException(&quot;executor rejected&quot;)
-        ioException.initCause(e)
-        noMoreExchanges(ioException)
-        responseCallback.onFailure(this@RealCall, ioException)
-    } finally {
-        if (!success) {
-            //异常处理
-            client.dispatcher.finished(this) // This call is no longer running!
-        }
-    }
-}</code></pre><p>&emsp;&emsp;异步请求的相关解释，就看我在源码中的注释吧，他最终也会调用execute()方法，相比同步请求，异步请求添加了异步请求队列，同时也利用线程池来执行call,还添加了一个<br>Dispatcher用于管理异步请求啥时候执行。</p>
 <hr>
-<h2 id="六-总结"><a href="#六-总结" class="headerlink" title="六.总结"></a>六.总结</h2><p>&emsp;&emsp;本篇文章是okhttp系列的第一篇，主要针对请求的基础对象做了一个介绍，以及同步异步流程的分析。通过源码的学习，我们也可以了解很多知识，okhttp的责任链模式管理拦截器值得大家深入了解的，后面的文章我也会从拦截器着手了。</p>
+<h2 id="三-Java-内存回收算法"><a href="#三-Java-内存回收算法" class="headerlink" title="三.Java 内存回收算法"></a>三.Java 内存回收算法</h2><h4 id="标记清除算法"><a href="#标记清除算法" class="headerlink" title="标记清除算法"></a>标记清除算法</h4><p>&emsp;&emsp;标记清除算法是一种垃圾回收算法，用于管理动态分配的内存。它的主要思想是，当某个对象不再被程序所引用时，它就可以被认为是“垃圾”，并被回收以便后续的内存分配。</p>
+<h5 id="标记清除算法分为两个阶段："><a href="#标记清除算法分为两个阶段：" class="headerlink" title="标记清除算法分为两个阶段："></a>标记清除算法分为两个阶段：</h5><ul>
+<li>1.标记阶段：遍历整个堆，标记所有仍然被引用的对象。这通常通过从根对象（如全局变量、调用栈等）开始进行深度优先搜索来实现。</li>
+<li>2.清除阶段：遍历整个堆，将所有未被标记的对象（即垃圾）进行清除，并将它们所占用的内存返回给堆。</li>
+</ul>
+<h4 id="复制算法"><a href="#复制算法" class="headerlink" title="复制算法"></a>复制算法</h4><p>&emsp;&emsp;复制算法是一种将内存分为两个区域的算法，其中一个区域用于存储活动对象，另一个区域用于存储不再使用的对象。</p>
+<h5 id="复制算法步骤如下："><a href="#复制算法步骤如下：" class="headerlink" title="复制算法步骤如下："></a>复制算法步骤如下：</h5><ul>
+<li>1.将内存划分为大小相等的两块。</li>
+<li>2.一块内存用完之后复制存活对象到另一块。</li>
+<li>3.清理另一块内存。</li>
+</ul>
+<h5 id="复制算法优缺点"><a href="#复制算法优缺点" class="headerlink" title="复制算法优缺点"></a>复制算法优缺点</h5><ul>
+<li>优点：实现简单，运行高效，每次仅需遍历标记一半的内存区域。</li>
+<li>缺点：会浪费一半的空间，代价大。</li>
+</ul>
+<h4 id="标记整理算法"><a href="#标记整理算法" class="headerlink" title="标记整理算法"></a>标记整理算法</h4><p>&emsp;&emsp;标记整理算法是标记清除算法和复制算法的结合，其工作原理是先标记出不再使用的对象，再整理内存使得活动对象的内存分配连续。</p>
+<h5 id="标记整理算法步骤如下："><a href="#标记整理算法步骤如下：" class="headerlink" title="标记整理算法步骤如下："></a>标记整理算法步骤如下：</h5><ul>
+<li>1.标记过程与 标记-清除算法 一样。</li>
+<li>2.存活对象往一端进行移动。</li>
+<li>3.清理其余内存。</li>
+</ul>
+<h4 id="分代收集算法"><a href="#分代收集算法" class="headerlink" title="分代收集算法"></a>分代收集算法</h4><p>&emsp;&emsp;分代回收算法是一种将内存分为几个代的算法，并对每个代进行不同的回收策略。</p>
+<h5 id="分代收集算法步骤如下："><a href="#分代收集算法步骤如下：" class="headerlink" title="分代收集算法步骤如下："></a>分代收集算法步骤如下：</h5><ul>
+<li>1.分配新的对象：新创建的对象分配在新生代中，因为大多数新创建的对象都很快失效，并且删除它们的成本很低。</li>
+<li>2.垃圾回收：新生代中的垃圾对象被回收，并且回收算法只涉及到新生代的一小部分。如果一个对象存活到一定时间，它将被移动到老年代。</li>
+<li>3.老年代回收：在老年代中，回收算法进行全面的垃圾回收，以确保可以回收所有垃圾对象。</li>
+<li>4.整理内存：回收后，内存被整理，以确保连续的内存空间可以分配给新对象。</li>
+</ul>
+<hr>
+<h2 id="四-内存问题和现象"><a href="#四-内存问题和现象" class="headerlink" title="四.内存问题和现象"></a>四.内存问题和现象</h2><p>&emsp;&emsp;即便有了内存管理机制，但是如果不合理地使用内存，也会造成一系列的性能问题。内存问题主要是有内存抖动、内存泄露、内存溢出这三类问题。</p>
+<h4 id="内存抖动"><a href="#内存抖动" class="headerlink" title="内存抖动"></a>内存抖动</h4><p>&emsp;&emsp;内存频繁的分配与回收，在短时间内大量的对象被创建又马上被释放。内存使用情况现象程锯齿状，瞬间产生大量的对象会严重占用内存区域，当达到阈值，剩余空间不够的时候，会触发 GC 从而导致刚产生的对象又很快被回收。即使每次分配的对象占用了很少的内存，但是他们叠加在一起会增加 Heap 的压力，触发更多其他类型的 GC，从而导致卡顿。<br>&emsp;&emsp;频繁创建对象，导致内存不足以及碎片（不连续），不连续的内存无法被分配，最终产生 OOM 。这个操作有可能会影响到帧率，并使得用户感知到性能问题。</p>
+<h4 id="内存泄露"><a href="#内存泄露" class="headerlink" title="内存泄露"></a>内存泄露</h4><p>&emsp;&emsp;应用中长期保持对某些对象的引用，导致垃圾收集器无法回收这些对象所占的内存，这种现象被称为内存泄漏。在使用资源的时候，系统为此开辟一段内存空间，使用完后忘记释放资源，这时资源一直被占用(未被回收)。虚拟机宁愿抛出 OOM，也不愿意去回收被占用的内存。<br>&emsp;&emsp;内存泄漏的本质原因：本该被回收的对象没有被回，继续停留在内存空间中，导致内存被占用。其实是持有引用者的生命周期 &gt; 被持有引用者的生命周期。准确地说，程序运行分配的对象回收不及时或者无法被回收都会导致内存泄漏。</p>
+<h4 id="内存溢出"><a href="#内存溢出" class="headerlink" title="内存溢出"></a>内存溢出</h4><p>&emsp;&emsp;Android 给每个 App 分配一个 VM ，让 App 运行在 Dalvik 上，这样即使 App 崩溃也不会影响到系统。系统给 VM 分配了一定的内存大小， App 可以申请使用的内存大小不能超过此硬性逻辑限制，就算物理内存富余，如果应用超出 VM 最大内存，就会出现内存溢出 crash，也就是内存溢出。<br>&emsp;&emsp;只有当系统在申请内存空间时，没有总够的内存空间供其使用。导致 App 占用的内存超过了系统允许的范围（也就是前面提到的内存限制）时，才会导致内存溢出。简单来说就是系统不能再分配你所需要的内存空间，比如你申请需要 100M 的内存空间，但是系统仅剩 90M 了，这时候就会内存溢出。<br>&emsp;&emsp;导致内存溢出的原因有两个：</p>
+<ul>
+<li>1.当前使用的对象过大或过多，这些对象所占用的内存超过了剩余的可用空间。</li>
+<li>2.内存泄漏：内存泄漏不一定导致内存溢出，但是过多内存泄漏会把内存空间占用完，最终会导致内存溢出。</li>
+</ul>
+<hr>
+<h2 id="五-Java-引用类型"><a href="#五-Java-引用类型" class="headerlink" title="五. Java 引用类型"></a>五. Java 引用类型</h2><p>&emsp;&emsp;JVM 场景的引用类型有四种,分别是强引用、软引用、软引用和虚引用</p>
+<ul>
+<li>强引用：代码中普遍存在的，只要强引用还存在，垃圾收集器就不会回收掉被引用的对象。</li>
+<li>软引用：SoftReference，用来描述还有用但是非必须的对象，当内存不足的时候会回收这类对象。</li>
+<li>弱引用：WeakReference，用来描述非必须对象，弱引用的对象只能生存到下一次GC发生时，当GC发生时，无论内存是否足够，都会回收该对象。</li>
+<li>虚引用：PhantomReference，一个对象是否有虚引用的存在，完全不会对其生存时间产生影响，也无法通过虚引用取得一个对象的引用，它存在的唯一目的是在这个对象被回收时可以收到一个系统通知。</li>
+</ul>
+<hr>
+<h2 id="五-小结"><a href="#五-小结" class="headerlink" title="五.小结"></a>五.小结</h2><p>&emsp;&emsp;本文只是安卓内存优化系列的一个开篇，这些理论知识是内存优化实战的基础，只有深刻理解内存分配、回收机制及问题根源，才能在后续的工具使用、代码优化中精准定位问题、高效制定解决方案。后续将基于本篇理论，逐步展开实战技巧与实践案例，实现从理论到落地的完整闭环。</p>
 
       
 
@@ -428,7 +229,7 @@ fun executeOn(executorService: ExecutorService) {
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">性能优化</a>
         		</li>
       		
 		</ul>
@@ -447,18 +248,18 @@ fun executeOn(executorService: ExecutorService) {
   
 <nav id="article-nav">
   
-    <a href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E3%80%81%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
       <i class="icon-circle-left"></i>
       <div class="article-nav-title">
         
-          okhttp源码分析之RetryAndFollowUpInterceptor篇（二）
+          一次安卓内存优化小记之代码优化、工具使用篇（二）
         
       </div>
     </a>
   
   
-    <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">eventbus源码分析之post,postSticky流程分析（三）</div>
+    <a href="/2026/03/29/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BDataBinding%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Android业务架构Jetpack四件套之DataBinding篇（四）</div>
       <i class="icon-circle-right"></i>
     </a>
   

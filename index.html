@@ -135,6 +135,596 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-一次安卓内存优化小记之代码优化、工具使用篇（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E3%80%81%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">一次安卓内存优化小记之代码优化、工具使用篇（二）</a>
+    </h1>
+  
+
+        
+        <a href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E3%80%81%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-29T08:37:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;本篇是安卓内存优化的第二篇，第一篇理论篇主要阐述的是 “为何优化” 与“优化什么”，那么本篇将重点记录我是 “如何优化” 与 “如何验证”的。一方面，从代码层面拆解常见的内存浪费场景，梳理可直接落地的优化技巧（如对象复用、资源释放、引用管理等）；另一方面，我也会讲述一下Android 开发中必备的内存分析工具（如 Memory Profiler、LeakCanary 等）的使用技巧。</p>
+<hr>
+<h2 id="二-内存优化策略"><a href="#二-内存优化策略" class="headerlink" title="二.内存优化策略"></a>二.内存优化策略</h2><p>&emsp;&emsp;没有内存泄漏，并不意味着内存就不需要优化。由于物理设备的存储空间有限， Android 系统对每个应用也都分配了有限的堆内存，因此使用最小内存对象或者资源可以减少内存开销，同时让 GC 更高效地回收资源，让堆内存保持充足的可用内存，使应用更稳定高效地运行。</p>
+<h4 id="1-对象引用"><a href="#1-对象引用" class="headerlink" title="1.对象引用"></a>1.对象引用</h4><p>&emsp;&emsp;为了便于对象被回收，常常需要根据实际需要与对象建立不同程度的引用，这里简单介绍一下。Java 中的对象引用方式有如下4种：<br>| 引用类型 | 调用方式   | GC                     | 是否内存泄漏 |<br>| —- | —— | ———————- | —— |<br>| 强引用  | 直接调用   | 不回收，宁可抛出异常也不回收强引用指向的对象 | 是      |<br>| 软引用  | .get() | 视内存情况回收，内存不足时，GC 会回收   | 否      |<br>| 弱引用  | .get() | GC 了就回收，内存足不足          | 不可能    |<br>| 虚引用  | null   | 任何时候都可能被回收，相当于没有引用一样   | 否      |</p>
+<p><br/>&emsp;&emsp;对于强引用的对象，即使是内存不够用了，GC 时也不会被 JVM 作为垃圾回收掉，只会抛出 OutOfMemmory异常，所以我们在解决内存泄漏的问题时，很多情况下需要处理强引用的问题</p>
+<h4 id="2-优先使用基本类型，减少自动装箱"><a href="#2-优先使用基本类型，减少自动装箱" class="headerlink" title="2. 优先使用基本类型，减少自动装箱"></a>2. 优先使用基本类型，减少自动装箱</h4><p>&emsp;&emsp;在没有特殊原因的情况下，尽量使用基本数据类型来代替封装数据类型，int 比 Integer 要更加有效，其它数据类型也是一样。<br>&emsp;&emsp;自动装箱的核心就是把基础数据类型转换成对应的复杂类型。在自动装箱转化时，都会产生一个新的对象，这样就会产生更多的内存和性能开销。如 int 只占4字节，而 Integer 对象有16字节，特别是 HashMap 这类容器，进行增、删、改、查操作时，都会产生大量的自动装箱操作。</p>
+<h4 id="3-内存复用"><a href="#3-内存复用" class="headerlink" title="3. 内存复用"></a>3. 内存复用</h4><p>&emsp;&emsp;对于内存复用，有效利用系统自带的资源，对象池，Bitmap对象的复用，有如下三种可行的方式：</p>
+<ul>
+<li>资源复用：通用的字符串、颜色定义、简单页面布局的复用。</li>
+<li>对象池：显示创建对象池，实现复用逻辑，对相同的类型数据使用同一块内存空间。</li>
+<li>Bitmap对象的复用：使用 inBitmap 属性可以告知 Bitmap 解码器尝试使用已经存在的内存区域，新解码的 Bitmap 会尝试使用之前那张 Bitmap 在 heap 中占据的 pixel data 内存区域。</li>
+</ul>
+<h4 id="4-使用最优的数据结构"><a href="#4-使用最优的数据结构" class="headerlink" title="4. 使用最优的数据结构"></a>4. 使用最优的数据结构</h4><p>&emsp;&emsp;比如针对数据类容器结构，可以使用 ArrayMap、SparseArray数据结构。<br>&emsp;&emsp;HashMap 工具类会相对比较低效，因为它需要为每一个键值对都提供一个对象入口，而SparseArray就避免掉了基本数据类型转换成对象数据类型的时间。<br>&emsp;&emsp;ArrayMap提供了和HashMap一样的功能，但避免了过多的内存开销，方法是使用两个小数组，而不是一个大数组。并且ArrayMap在内存上是连续不间断的。总体来说，在ArrayMap中执行插入或者删除操作时，从性能角度上看，比 HashMap 还要更差一些，但如果只涉及很小的对象数，比如1000以下，就不需要担心这个问题了。因为此时 ArrayMap 不会分配过大的数组。</p>
+<h4 id="5-避免使用枚举类型"><a href="#5-避免使用枚举类型" class="headerlink" title="5. 避免使用枚举类型"></a>5. 避免使用枚举类型</h4><p>&emsp;&emsp;枚举最大的优点是类型安全，但在 Android 平台上，枚举的内存开销是直接定义常量的三倍以上。<br>&emsp;&emsp;每一个枚举值都是一个单例对象，在使用它时会增加额外的内存消耗，所以枚举相比与 Integer 和 String 会占用更多的内存。大量使用 Enum 会增加 DEX 文件的大小，会造成运行时更多的 IO 开销，使我们的应用需要更多的空间。特别是分 Dex 多的大型 App，枚举的初始化很容易导致 ANR。</p>
+<h4 id="6-避免不必要的对象创建"><a href="#6-避免不必要的对象创建" class="headerlink" title="6. 避免不必要的对象创建"></a>6. 避免不必要的对象创建</h4><p>&emsp;&emsp;我们可以在字符串拼接的时候尽量少用 +=，多使用 StringBuffer，StringBuilder。<br>&emsp;&emsp;不要在 onMeause()、onLayout()、onDraw() 中去刷新 UI（requestLayout()）。<br>&emsp;&emsp;自定义 View 的onLayout()、onDraw()、列表遍历等频繁调用的方法里创建对象。这些方法会被多次调用，在其内部创建对象会导致系统频繁申请存储空间并触发 GC，导致内存抖动，严重会导致 OOM。</p>
+<h4 id="7-谨慎使用Service"><a href="#7-谨慎使用Service" class="headerlink" title="7. 谨慎使用Service"></a>7. 谨慎使用Service</h4><p>&emsp;&emsp;如果应用程序当中需要使用 Service 来执行后台任务的话，一定要注意只有当任务正在执行的时候才应该让 Service 运行起来。另外，当任务执行完之后去停止 Service 的时候，要小心 Service 停止失败导致内存泄漏的情况。<br>&emsp;&emsp;启动一个 Service 时，系统会倾向于将这个 Service 所依赖的进程进行保留，这样就会导致这个进程变得非常消耗内存。并且系统可以在 LruCache 当中缓存的进程数量也会减少，导致切换应用程序的时候耗费更多性能，严重的话，甚至有可能会导致崩溃。因为系统在内存非常吃紧的时候可能已无法维护所有正在运行的 Service 所依赖的进程了。<br>&emsp;&emsp;为了能够控制 Service 的生命周期，Android 官方推荐的最佳解决方案就是使用 IntentService，这种 Service 的最大特点就是当后台任务执行结束后会自动停止，从而极大程度上避免了 Service 内存泄漏的可能性。<br>&emsp;&emsp;通常避免使用持久性服务，它们会持续请求使用可用内存。建议采用WorkManager等替代实现方式。</p>
+<h4 id="8-Activity-的兜底内存回收策略"><a href="#8-Activity-的兜底内存回收策略" class="headerlink" title="8.Activity 的兜底内存回收策略"></a>8.Activity 的兜底内存回收策略</h4><p>&emsp;&emsp;在 Activity 的 onPause()，onStop()，onDestory() 中根据场景释放其引用到的 Bitmap、DrawingCache 等资源，以降低发生内存泄漏时对应用内存的压力。</p>
+<h4 id="9-图片优化策略"><a href="#9-图片优化策略" class="headerlink" title="9.图片优化策略"></a>9.图片优化策略</h4><ul>
+<li>图片格式优化：无损 webp 平均比 png 小26%，有损 jpeg 平均比 webp 少24%-35%，无损 webp 支持 Alpha 通道，有损 webp 在一定条件下也支持。采用 webp 在保持图片清晰情况下，可以优先减少磁盘空间大小。可以将 drawable 中的 png、jpg 格式图片转换为 webp 格式图片。</li>
+<li>图片像素格式优化：系统默认图片是以 ARGB_8888 格式进行处理，ARGB_8888 最占内存，一个像素点占4B，改变这个格式就能降低图片占据内存的大小。将部分没有透明通道的图片格式由 ARGB_8888 替换为 RGB565，在图片质量上的损失几乎肉眼不可见，而每张图片可以节省1/2的内存。但是此方案并不通用，取决于图片是否有透明度需求，当然也可以使用 ARGB_4444，但是会降低图片质量。<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> options = BitmapFactory.<span class="constructor">Options()</span></span><br><span class="line">options.inPreferredConfig = Bitmap.Config.RGB_565</span><br><span class="line"><span class="module-access"><span class="module"><span class="identifier">BitmapFactory</span>.</span></span>decode<span class="constructor">Stream(<span class="params">is</span>, <span class="params">null</span>, <span class="params">options</span>)</span></span><br></pre></td></tr></table></figure></li>
+<li>图片采样率优化：在把图片载入内存之前，我们需要先计算出一个合适的 inSampleSize 缩放比例，降低图片像素，来达到降低图片占用内存大小的目的，避免不必要的大图载入。<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> options: BitampFactory.Options = BitmapFactory.<span class="constructor">Options()</span></span><br><span class="line"><span class="comment">// 设置为2就是宽和高都变为原来1/2大小的图片</span></span><br><span class="line">options.inSampleSize = <span class="number">2</span></span><br><span class="line"><span class="module-access"><span class="module"><span class="identifier">BitmapFactory</span>.</span></span>decode<span class="constructor">Sream(<span class="params">is</span>, <span class="params">null</span>, <span class="params">options</span>)</span></span><br></pre></td></tr></table></figure></li>
+<li>统一图片库：图片内存优化的前提是收拢图片的调用，这样我们可以做整体的控制策略。例如低端机使用 565 格式、更加严格的缩放算法。而且需要进一步将所有 Bitmap.createBitmap、BitmapFactory 相关的接口也一并收拢。另外 Glide 和 Fresco 第三方图片库功能全面，能高效处理 Bitmap，具有优秀的缓存策略，加载速度快且内存开销小。后者适用于需要高性能加载大量图片的场景。</li>
+</ul>
+<h4 id="10-Bitmap优化策略"><a href="#10-Bitmap优化策略" class="headerlink" title="10.Bitmap优化策略"></a>10.Bitmap优化策略</h4><ul>
+<li><p>释放Bitmap对象</p>
+<ul>
+<li>在 Android 3.0 之前：Bitmap 对象放在 Java 堆，而像素数据是放在 Native 内存中。如果不手动调用 Bitmap 的 recycle() 方法，Bitmap 的 Native 内存的回收就依赖于 finalize() 回调，finalize() 是 Object 类的一个方法，当一个堆空间中的对象没有被栈空间变量指向时，这个对象会等待被 Java 回收，时机不可控。</li>
+<li>在Android 3.0～Android 7.0：将 Bitmap 对象和像素数据统一放到 Java 堆中，即使不调用 recycle()，Bitmap 内存也会随着对象一起被回收。不过 Bitmap 是内存消耗的大户，把它放在 Java 堆中就压缩了其他资源的可用内存，而且这么做还会引发大量的 GC ，也没有充分利用系统内存。</li>
+<li>在Android 8.0 后：重新将 Bitmap 像素数据放回到 Native 中。新增了一个叫 NativeAllocationRegistry 的辅助回收 Native 内存的机制，像素放在了 Native 内存中，而且还新增了可以减少图片内存并提升绘制效率的硬件位图 Hardware Bitmap ，做到了 Bitmap 的 Native 内存可和对象一起快速释放，而且 GC 时会避免这些内存被滥用。</li>
+</ul>
+</li>
+<li><p>Bitmap复用：Bitmap 对象可以被复用，以避免频繁创建和销毁导致的内存开销。可以通过 LruCache 等缓存机制来管理 Bitmap 对象的复用。LruCache 最近最少使用缓存算法，内部维护了一个由 LinkedHashMap 组成的双向列表，添加了线程安全操作。当其中的一个值被访问时，它被放到队列的尾部，当缓存将满时，队列头部的值（最近最少被访问的）被丢弃，之后可以被 GC 回收。</p>
+</li>
+</ul>
+<h4 id="11-其它的内存优化注意事项"><a href="#11-其它的内存优化注意事项" class="headerlink" title="11.其它的内存优化注意事项"></a>11.其它的内存优化注意事项</h4><p>&emsp;&emsp;除了上面的一些内存优化点之外，这里还有一些内存优化的点：</p>
+<ul>
+<li>1.使用增强型 for 循环语法。</li>
+<li>2.使用 static final 优化成员变量。</li>
+<li>3.采用内存缓存和磁盘缓存。</li>
+</ul>
+<hr>
+<h2 id="三-内存问题诊断工具与方法"><a href="#三-内存问题诊断工具与方法" class="headerlink" title="三.内存问题诊断工具与方法"></a>三.内存问题诊断工具与方法</h2><h4 id="Android-Studio-Memory-Profiler"><a href="#Android-Studio-Memory-Profiler" class="headerlink" title="Android Studio Memory Profiler"></a>Android Studio Memory Profiler</h4><p>&emsp;&emsp;我们带着疑问去了解，如何使用Android Studio Memory Profiler查看Java堆和Native堆的内存分布？如何通过“Dump Java Heap”定位大对象和重复对象？ </p>
+<h5 id="步骤一：查看Java堆和Native堆的内存分布"><a href="#步骤一：查看Java堆和Native堆的内存分布" class="headerlink" title="步骤一：查看Java堆和Native堆的内存分布"></a>步骤一：查看Java堆和Native堆的内存分布</h5><ul>
+<li>1.打开Android Studio，连接测试设备并运行App，点击底部“Profiler”标签（或通过View &gt; Tool Windows &gt; Profiler打开）。 </li>
+<li>2.在Profiler面板中，选择当前运行的App进程（显示为“包名:pid”），点击“内存”图标，进入内存监控视图。</li>
+<li>3.监控视图中，默认展示内存总占用曲线，并通过不同颜色区分内存类型：<ul>
+<li>蓝色：Java堆内存（ART管理的对象）。</li>
+<li>紫色：Native堆内存（C/C++分配的内存）。 </li>
+<li>绿色：图形内存（如Bitmap像素、OpenGL纹理）。  </li>
+<li>灰色：其他内存（如代码区、系统内存）。</li>
+</ul>
+</li>
+<li>4.点击曲线下方的“内存类别”按钮，可单独展开Java堆、Native堆的实时占用趋势（如Java堆突然飙升可能是大对象创建，Native堆持续增长可能是Native泄漏）。</li>
+</ul>
+<h5 id="步骤二：通过“Dump-Java-Heap”定位大对象和重复对象"><a href="#步骤二：通过“Dump-Java-Heap”定位大对象和重复对象" class="headerlink" title="步骤二：通过“Dump Java Heap”定位大对象和重复对象"></a>步骤二：通过“Dump Java Heap”定位大对象和重复对象</h5><p>&emsp;&emsp;“Dump Java Heap”会生成当前Java堆的快照（hprof文件），用于分析对象分布：</p>
+<ul>
+<li>1.在内存监控视图中，点击工具栏的“Dump Java Heap”按钮，等待几秒生成快照（生成过程中App可能卡顿，建议在测试环境操作）。  </li>
+<li>2.快照加载完成后，切换到“Heap Dump”标签，默认展示“Classes”视图（按类名分组）。 </li>
+<li>3.定位大对象：点击“Shallow Size”（对象自身占用内存）或“Retained Size”（对象及引用链占用的总内存）排序，数值越大说明对象内存消耗越高，常见大对象：Bitmap（直接看实例的mWidth/mHeight判断是否过大）、ArrayList/HashMap（元素过多）、自定义数据类（如包含大数组）。 </li>
+<li>4.定位重复对象：查看“Count”列（类的实例数量），若某个类的实例数远高于预期（如同一页面的ImageView实例数远超布局中的数量），可能存在重复创建问题，点击类名展开实例列表，通过“Reference Tree”查看每个实例的引用来源，判断是否为不必要的重复对象（如列表滑动时未复用的View）。<br><img src="http://photogzmaz.photo.store.qq.com/psc?/V54GaIJN3UDNCg4dpr2f0IUIJO2rlciI/LiySpxowE0yeWXwBdXN*Sdcxorl98Tx8B6Swnfya44R6tlhpm7CUtiZAM2QEUZGk1n7FysrlDsrtgAMIdex5VhLR0I45WbNhHgTGJX**5m0!/b&bo=Egq6AxIKugMDR2I!&rf=viewer_4" alt=""></li>
+</ul>
+<h4 id="LeakCanary"><a href="#LeakCanary" class="headerlink" title="LeakCanary"></a>LeakCanary</h4><p>&emsp;&emsp;LeakCanary的核心逻辑是“监控生命周期→判断是否泄漏→分析泄漏链”，具体步骤：  </p>
+<ul>
+<li>生命周期监控：通过注册ActivityLifecycleCallbacks和FragmentLifecycleCallbacks，自动追踪Activity/Fragment的销毁事件（onDestroy）。 </li>
+<li>泄漏判断：当组件销毁后，LeakCanary将其放入“待回收队列”，并通过WeakReference关联一个“引用队列（ReferenceQueue）”，若一段时间（默认5秒）后，该组件仍未被GC回收（未进入引用队列），则判定为可能泄漏。</li>
+<li>强制GC与快照分析：判定可能泄漏后，LeakCanary会触发一次GC（Runtime.getRuntime().gc()），再次检查是否回收，若仍未回收，则dump Java堆快照（hprof），并通过内置的分析引擎（Shark）解析快照，生成泄漏引用链（从GC Roots到泄漏对象的路径）。 </li>
+<li>结果展示：将泄漏链以通知形式展示，包含泄漏对象、引用链关键节点（如静态变量、单例），帮助开发者定位泄漏源。</li>
+</ul>
+<p>&emsp;&emsp;此时，我们有一个疑问，对于Native层泄漏，LeakCanary是否适用？<br>&emsp;&emsp;直接给结论，LeakCanary不支持Native层泄漏检测，原因是：Native层内存由C/C++代码管理，分配/释放不经过ART GC，LeakCanary的基于Java堆快照的分析逻辑无法覆盖，Native对象的引用关系（如JNI全局引用未释放）无法通过Java层hprof文件捕获，若需检测Native泄漏，需使用libc malloc debug、Android NDK memtrack等工具。  </p>
+<hr>
+<h2 id="五-小结"><a href="#五-小结" class="headerlink" title="五.小结"></a>五.小结</h2><p>&emsp;&emsp;整体来看，安卓内存优化需 “编码预防 + 工具验证” 双管齐下：编码阶段通过遵循优化规范减少内存浪费与泄漏风险，测试阶段借助专业工具精准定位潜在问题。这些实践不仅能降低 OOM、内存抖动等异常概率，更能提升应用运行的稳定性与流畅度，为用户提供更优质的体验。<br>&emsp;&emsp;关于详细的内存工具使用，目前Systrace 工具已经停更，Perfetto工具是谷歌推出的，这里贴一篇大佬写的<a href="https://androidperformance.com/2025/08/05/Android-Perfetto-08-Vsync/" target="_blank" rel="noopener">Android Perfetto工具的系列文章</a>，方便后续查看。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">性能优化</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E3%80%81%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-一次安卓内存优化小记之理论篇（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/">一次安卓内存优化小记之理论篇（一）</a>
+    </h1>
+  
+
+        
+        <a href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-29T08:36:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;在 Android 开发中，内存优化是一个永恒的话题。理论知识很重要，但实战经验更为珍贵。本小节将从理论知识出发，逐步介绍 Android 内存优化的实战技巧、工具使用和实践，也算是一次知识回顾的记录。</p>
+<hr>
+<h2 id="二-内存管理机制"><a href="#二-内存管理机制" class="headerlink" title="二.内存管理机制"></a>二.内存管理机制</h2><p>&emsp;&emsp;在内存管理上，JVM 拥有垃圾内存回收的机制，自身会在虚拟机层面自动分配和释放内存，因此不需要像使用 C/C++ 一样在代码中分配和释放某一块内存。Android 系统的内存管理类似于 JVM，通过 new 关键字来为对象分配内存，内存的释放由 GC 来回收。并且系统在内存管理上有一个 Generational Heap Memory 模型，当内存达到某一个阈值时，系统会根据不同的规则自动释放可以释放的内存。<br>&emsp;&emsp;Java 虚拟机所管理的内存包含了5个区域：程序计数器，虚拟机栈，本地方法栈，Java 堆，方法区：</p>
+<ul>
+<li>方法区：是被线程共享的区域，一般用来存储不容易改变的数据（也被称为「永久代」）。存储了每个类的信息、静态变量、常量以及编译器编译后的代码等内容。当方法区无法满足内存分配需求时，将抛出 OOM 异常。</li>
+<li>Java虚拟机栈：栈内存，它是 Java 方法执行的内存模型。Java 栈中存放的是一个个的栈帧，每个栈帧对应的是一个被调用的方法。存放的是局部变量表、操作数栈、方法返回地址等信息，会指向堆中真正存储的对象。每一个方法从调用直至执行完成的过程，就对应着一个栈帧在虚拟机栈中入栈到出栈的过程。扩展时无法申请到足够的内存，就会抛出 OOM 异常。</li>
+<li>本地方法栈：与 Java 虚拟机栈的作用和原理非常相似，区别在本地方法栈为执行 Native 方法服务的，而 Java 虚拟机栈是为执行 Java 方法服务的。本地方法栈区域也会抛出 OOM 异常。</li>
+<li>Java堆：堆内存，内存最大区域，被所有线程共享，唯一目的就是存放对象实例，几乎所有的对象实例都在这里分配。它是 Java 的垃圾收集器管理的主要区域，内存泄漏也都是发生在这个区域。当无法再扩展时，将会抛出 OOM 异常。</li>
+<li>程序计数器：是一块较小的内存空间，也称为 PC 寄存器。它保存的是程序当前执行的指令的地址，用于指示执行哪条指令。这块内存中存储的数据所占空间的大小不会随程序的执行而发生改变，此内存区域不会发生内存溢出问题。</li>
+</ul>
+<hr>
+<h2 id="三-Java-内存回收算法"><a href="#三-Java-内存回收算法" class="headerlink" title="三.Java 内存回收算法"></a>三.Java 内存回收算法</h2><h4 id="标记清除算法"><a href="#标记清除算法" class="headerlink" title="标记清除算法"></a>标记清除算法</h4><p>&emsp;&emsp;标记清除算法是一种垃圾回收算法，用于管理动态分配的内存。它的主要思想是，当某个对象不再被程序所引用时，它就可以被认为是“垃圾”，并被回收以便后续的内存分配。</p>
+<h5 id="标记清除算法分为两个阶段："><a href="#标记清除算法分为两个阶段：" class="headerlink" title="标记清除算法分为两个阶段："></a>标记清除算法分为两个阶段：</h5><ul>
+<li>1.标记阶段：遍历整个堆，标记所有仍然被引用的对象。这通常通过从根对象（如全局变量、调用栈等）开始进行深度优先搜索来实现。</li>
+<li>2.清除阶段：遍历整个堆，将所有未被标记的对象（即垃圾）进行清除，并将它们所占用的内存返回给堆。</li>
+</ul>
+<h4 id="复制算法"><a href="#复制算法" class="headerlink" title="复制算法"></a>复制算法</h4><p>&emsp;&emsp;复制算法是一种将内存分为两个区域的算法，其中一个区域用于存储活动对象，另一个区域用于存储不再使用的对象。</p>
+<h5 id="复制算法步骤如下："><a href="#复制算法步骤如下：" class="headerlink" title="复制算法步骤如下："></a>复制算法步骤如下：</h5><ul>
+<li>1.将内存划分为大小相等的两块。</li>
+<li>2.一块内存用完之后复制存活对象到另一块。</li>
+<li>3.清理另一块内存。</li>
+</ul>
+<h5 id="复制算法优缺点"><a href="#复制算法优缺点" class="headerlink" title="复制算法优缺点"></a>复制算法优缺点</h5><ul>
+<li>优点：实现简单，运行高效，每次仅需遍历标记一半的内存区域。</li>
+<li>缺点：会浪费一半的空间，代价大。</li>
+</ul>
+<h4 id="标记整理算法"><a href="#标记整理算法" class="headerlink" title="标记整理算法"></a>标记整理算法</h4><p>&emsp;&emsp;标记整理算法是标记清除算法和复制算法的结合，其工作原理是先标记出不再使用的对象，再整理内存使得活动对象的内存分配连续。</p>
+<h5 id="标记整理算法步骤如下："><a href="#标记整理算法步骤如下：" class="headerlink" title="标记整理算法步骤如下："></a>标记整理算法步骤如下：</h5><ul>
+<li>1.标记过程与 标记-清除算法 一样。</li>
+<li>2.存活对象往一端进行移动。</li>
+<li>3.清理其余内存。</li>
+</ul>
+<h4 id="分代收集算法"><a href="#分代收集算法" class="headerlink" title="分代收集算法"></a>分代收集算法</h4><p>&emsp;&emsp;分代回收算法是一种将内存分为几个代的算法，并对每个代进行不同的回收策略。</p>
+<h5 id="分代收集算法步骤如下："><a href="#分代收集算法步骤如下：" class="headerlink" title="分代收集算法步骤如下："></a>分代收集算法步骤如下：</h5><ul>
+<li>1.分配新的对象：新创建的对象分配在新生代中，因为大多数新创建的对象都很快失效，并且删除它们的成本很低。</li>
+<li>2.垃圾回收：新生代中的垃圾对象被回收，并且回收算法只涉及到新生代的一小部分。如果一个对象存活到一定时间，它将被移动到老年代。</li>
+<li>3.老年代回收：在老年代中，回收算法进行全面的垃圾回收，以确保可以回收所有垃圾对象。</li>
+<li>4.整理内存：回收后，内存被整理，以确保连续的内存空间可以分配给新对象。</li>
+</ul>
+<hr>
+<h2 id="四-内存问题和现象"><a href="#四-内存问题和现象" class="headerlink" title="四.内存问题和现象"></a>四.内存问题和现象</h2><p>&emsp;&emsp;即便有了内存管理机制，但是如果不合理地使用内存，也会造成一系列的性能问题。内存问题主要是有内存抖动、内存泄露、内存溢出这三类问题。</p>
+<h4 id="内存抖动"><a href="#内存抖动" class="headerlink" title="内存抖动"></a>内存抖动</h4><p>&emsp;&emsp;内存频繁的分配与回收，在短时间内大量的对象被创建又马上被释放。内存使用情况现象程锯齿状，瞬间产生大量的对象会严重占用内存区域，当达到阈值，剩余空间不够的时候，会触发 GC 从而导致刚产生的对象又很快被回收。即使每次分配的对象占用了很少的内存，但是他们叠加在一起会增加 Heap 的压力，触发更多其他类型的 GC，从而导致卡顿。<br>&emsp;&emsp;频繁创建对象，导致内存不足以及碎片（不连续），不连续的内存无法被分配，最终产生 OOM 。这个操作有可能会影响到帧率，并使得用户感知到性能问题。</p>
+<h4 id="内存泄露"><a href="#内存泄露" class="headerlink" title="内存泄露"></a>内存泄露</h4><p>&emsp;&emsp;应用中长期保持对某些对象的引用，导致垃圾收集器无法回收这些对象所占的内存，这种现象被称为内存泄漏。在使用资源的时候，系统为此开辟一段内存空间，使用完后忘记释放资源，这时资源一直被占用(未被回收)。虚拟机宁愿抛出 OOM，也不愿意去回收被占用的内存。<br>&emsp;&emsp;内存泄漏的本质原因：本该被回收的对象没有被回，继续停留在内存空间中，导致内存被占用。其实是持有引用者的生命周期 &gt; 被持有引用者的生命周期。准确地说，程序运行分配的对象回收不及时或者无法被回收都会导致内存泄漏。</p>
+<h4 id="内存溢出"><a href="#内存溢出" class="headerlink" title="内存溢出"></a>内存溢出</h4><p>&emsp;&emsp;Android 给每个 App 分配一个 VM ，让 App 运行在 Dalvik 上，这样即使 App 崩溃也不会影响到系统。系统给 VM 分配了一定的内存大小， App 可以申请使用的内存大小不能超过此硬性逻辑限制，就算物理内存富余，如果应用超出 VM 最大内存，就会出现内存溢出 crash，也就是内存溢出。<br>&emsp;&emsp;只有当系统在申请内存空间时，没有总够的内存空间供其使用。导致 App 占用的内存超过了系统允许的范围（也就是前面提到的内存限制）时，才会导致内存溢出。简单来说就是系统不能再分配你所需要的内存空间，比如你申请需要 100M 的内存空间，但是系统仅剩 90M 了，这时候就会内存溢出。<br>&emsp;&emsp;导致内存溢出的原因有两个：</p>
+<ul>
+<li>1.当前使用的对象过大或过多，这些对象所占用的内存超过了剩余的可用空间。</li>
+<li>2.内存泄漏：内存泄漏不一定导致内存溢出，但是过多内存泄漏会把内存空间占用完，最终会导致内存溢出。</li>
+</ul>
+<hr>
+<h2 id="五-Java-引用类型"><a href="#五-Java-引用类型" class="headerlink" title="五. Java 引用类型"></a>五. Java 引用类型</h2><p>&emsp;&emsp;JVM 场景的引用类型有四种,分别是强引用、软引用、软引用和虚引用</p>
+<ul>
+<li>强引用：代码中普遍存在的，只要强引用还存在，垃圾收集器就不会回收掉被引用的对象。</li>
+<li>软引用：SoftReference，用来描述还有用但是非必须的对象，当内存不足的时候会回收这类对象。</li>
+<li>弱引用：WeakReference，用来描述非必须对象，弱引用的对象只能生存到下一次GC发生时，当GC发生时，无论内存是否足够，都会回收该对象。</li>
+<li>虚引用：PhantomReference，一个对象是否有虚引用的存在，完全不会对其生存时间产生影响，也无法通过虚引用取得一个对象的引用，它存在的唯一目的是在这个对象被回收时可以收到一个系统通知。</li>
+</ul>
+<hr>
+<h2 id="五-小结"><a href="#五-小结" class="headerlink" title="五.小结"></a>五.小结</h2><p>&emsp;&emsp;本文只是安卓内存优化系列的一个开篇，这些理论知识是内存优化实战的基础，只有深刻理解内存分配、回收机制及问题根源，才能在后续的工具使用、代码优化中精准定位问题、高效制定解决方案。后续将基于本篇理论，逐步展开实战技巧与实践案例，实现从理论到落地的完整闭环。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">性能优化</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2026/03/29/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0%E4%B9%8B%E7%90%86%E8%AE%BA%E7%AF%87%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Android业务架构Jetpack四件套之DataBinding篇（四）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2026/03/29/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BDataBinding%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/">Android业务架构Jetpack四件套之DataBinding篇（四）</a>
+    </h1>
+  
+
+        
+        <a href="/2026/03/29/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BDataBinding%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-29T08:34:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-29</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;在前面三篇文章中，我们分别探讨了 Jetpack 四件套中的 Lifecycle、LiveData 和 ViewModel 组件。Lifecycle 解决了生命周期管理的痛点，LiveData 提供了数据观察机制，ViewModel 则专门用于管理 UI 相关数据。今天，我们将完成 Jetpack 四件套的学习之旅，聚焦于最后一个核心组件 ——DataBinding。 <br>&emsp;&emsp;在传统的 Android 开发中，我们经常需要编写大量的 findViewById () 代码来获取视图引用，然后手动设置数据到视图上。这种方式不仅繁琐，还容易导致内存泄漏和空指针异常。而 DataBinding 的出现，恰好为我们提供了一种将布局文件与数据直接绑定的方式。 <br>&emsp;&emsp;本文将从 DataBinding 的基础概念入手，详细介绍其使用方法、核心特性、应用场景，并分析实现原理。</p>
+<hr>
+<h2 id="二-基础定义"><a href="#二-基础定义" class="headerlink" title="二.基础定义"></a>二.基础定义</h2><ul>
+<li>Android DataBinding 是一个支持库，它允许你使用声明性格式而非程序化地将布局文件中的 UI 组件绑定到应用程序的数据源。</li>
+<li>DataBinding 消除了 findViewById () 调用和手动更新 UI 的代码，使代码更加简洁、易读和可维护。</li>
+<li>DataBinding 支持单向和双向数据绑定，当数据发生变化时，UI 会自动更新，反之亦然。</li>
+<li>DataBinding 可以与 Jetpack 的其他组件（如 ViewModel 和 LiveData）无缝集成，形成完整的 MVVM 架构。</li>
+</ul>
+<hr>
+<h2 id="三-基础使用"><a href="#三-基础使用" class="headerlink" title="三. 基础使用"></a>三. 基础使用</h2><ul>
+<li>启用 DataBinding：首先需要在 build.gradle 文件中启用 DataBinding</li>
+</ul>
+<!---->
+
+<pre><code>android {
+    ...
+    buildFeatures {
+        dataBinding true
+    }
+}</code></pre><ul>
+<li>创建布局文件：创建一个使用 DataBinding 的布局文件，以.xml为扩展名，根元素为 layout</li>
+</ul>
+<!---->
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;layout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;
+    xmlns:app=&quot;http://schemas.android.com/apk/res-auto&quot;&gt;
+
+    &lt;!-- 数据变量定义 --&gt;
+    &lt;data&gt;
+        &lt;variable
+            name=&quot;user&quot;
+            type=&quot;com.example.User&quot; /&gt;
+
+        &lt;variable
+            name=&quot;viewModel&quot;
+            type=&quot;com.example.UserProfileViewModel&quot; /&gt;
+
+        &lt;variable
+            name=&quot;clickListener&quot;
+            type=&quot;android.view.View.OnClickListener&quot; /&gt;
+    &lt;/data&gt;
+
+    &lt;!-- 布局内容 --&gt;
+    &lt;LinearLayout
+        android:layout_width=&quot;match_parent&quot;
+        android:layout_height=&quot;match_parent&quot;
+        android:orientation=&quot;vertical&quot;
+        android:padding=&quot;16dp&quot;&gt;
+
+        &lt;TextView
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;@{user.name}&quot;
+            android:textSize=&quot;24sp&quot; /&gt;
+
+        &lt;TextView
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;@{user.email}&quot;
+            android:textSize=&quot;16sp&quot; /&gt;
+
+        &lt;EditText
+            android:layout_width=&quot;match_parent&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:hint=&quot;输入用户名&quot;
+            android:text=&quot;@={viewModel.userName}&quot; /&gt;
+
+        &lt;Button
+            android:layout_width=&quot;wrap_content&quot;
+            android:layout_height=&quot;wrap_content&quot;
+            android:text=&quot;更新&quot;
+            android:onClick=&quot;@{clickListener}&quot; /&gt;
+
+    &lt;/LinearLayout&gt;
+&lt;/layout&gt;</code></pre><ul>
+<li>创建数据类</li>
+</ul>
+<!---->
+
+<pre><code>data class User(
+    val name: String,
+    val email: String,
+    val avatarUrl: String? = null
+)</code></pre><ul>
+<li>在 Activity 中使用</li>
+</ul>
+<!---->
+
+<pre><code>class UserProfileActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityUserProfileBinding
+    private lateinit var viewModel: UserProfileViewModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 初始化DataBinding
+        binding = ActivityUserProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // 初始化ViewModel
+        viewModel = ViewModelProvider(this).get(UserProfileViewModel::class.java)
+
+        // 设置数据绑定
+        binding.user = User(&quot;张三&quot;, &quot;zhangsan@example.com&quot;)
+        binding.viewModel = viewModel
+        binding.clickListener = View.OnClickListener {
+            viewModel.updateUserProfile()
+        }
+
+        // 设置生命周期所有者，用于观察LiveData
+        binding.lifecycleOwner = this
+
+        // 加载用户数据
+        viewModel.loadUserProfile(&quot;123456&quot;)
+    }
+}</code></pre><ul>
+<li>高级用法：使用 Observable 数据类</li>
+</ul>
+<!---->
+
+<pre><code>// 使用Observable数据类
+class ObservableUser : BaseObservable() {
+    @get:Bindable
+    var name: String = &quot;&quot;
+        set(value) {
+            field = value
+            notifyPropertyChanged(BR.name)
+        }
+
+    @get:Bindable
+    var email: String = &quot;&quot;
+        set(value) {
+            field = value
+            notifyPropertyChanged(BR.email)
+        }
+}
+
+// 在ViewModel中使用
+class UserProfileViewModel : ViewModel() {
+    val observableUser = ObservableUser()
+
+    fun loadUserProfile(userId: String) {
+        viewModelScope.launch {
+            val user = repository.getUserProfile(userId)
+            observableUser.name = user.name
+            observableUser.email = user.email
+        }
+    }
+}
+
+// 在布局中使用
+&lt;TextView
+    android:layout_width=&quot;wrap_content&quot;
+    android:layout_height=&quot;wrap_content&quot;
+    android:text=&quot;@{viewModel.observableUser.name}&quot; /&gt;</code></pre><hr>
+<h2 id="四-应用场景"><a href="#四-应用场景" class="headerlink" title="四.应用场景"></a>四.应用场景</h2><p>JJetpack DataBinding 组件的实际开发应用场景包括：</p>
+<ul>
+<li>表单处理：DataBinding的双向绑定特性非常适合处理表单数据，自动同步用户输入和数据源。</li>
+<li>列表展示：与 RecyclerView 结合使用，可以简化列表项的数据绑定，提高列表性能。</li>
+<li>复杂 UI 状态管理：通过 ObservableField 和 LiveData，可以轻松管理复杂的 UI 状态。</li>
+<li>减少模板代码：消除 findViewById () 和手动更新 UI 的代码，使代码更加简洁。</li>
+</ul>
+<hr>
+<h2 id="五-实现原理"><a href="#五-实现原理" class="headerlink" title="五.实现原理"></a>五.实现原理</h2><p>&emsp;&emsp;DataBinding的原理主要包括以下几个方面：</p>
+<ul>
+<li>布局文件的解析和生成：在DataBinding中，布局文件会被解析并生成对应的ViewDataBinding类。这个类包含了布局文件中定义的所有UI组件的引用，以及绑定到这些UI组件的数据对象。</li>
+<li>数据对象的绑定：DataBinding会在编译时生成代码来完成UI组件和数据对象的绑定。生成的代码会被包含在BR类中。这个类包含了应用程序中所有用于绑定的变量的引用。当数据对象发生变化时，DataBinding会自动更新UI组件的值。</li>
+<li>观察者模式的应用：DataBinding使用观察者模式来保持UI和数据之间的同步。当数据对象发生变化时，DataBinding会自动更新UI组件的值。在DataBinding中，数据对象是被观察的对象，而UI组件是观察者。</li>
+<li>双向绑定的实现：DataBinding支持双向绑定，即当UI组件的值发生变化时，DataBinding会自动更新数据对象的值。这是通过使用双向绑定适配器来实现的。适配器会在UI组件的值发生变化时自动更新数据对象的值。</li>
+<li>属性转换器的使用：DataBinding还支持属性转换器，可以用来将数据对象中的值转换为UI组件可以显示的值。例如，可以使用属性转换器将日期格式化为特定的格式。</li>
+<li>数据绑定表达式的应用：DataBinding还支持数据绑定表达式，可以用来在布局文件中动态计算UI组件的值。例如，可以使用数据绑定表达式将两个文本框中的值相加并将结果显示在第三个文本框中。</li>
+</ul>
+<p>&emsp;&emsp;DataBinding 的核心原理是在编译时生成绑定类，这些类负责管理数据和视图之间的绑定关系。当数据发生变化时，绑定类会自动更新相关的视图，反之亦然。<br><br>&emsp;&emsp;在实际开发中，DataBinding 特别适合处理表单数据、列表展示和复杂 UI 状态管理等场景。通过与 MVVM 架构结合使用，可以实现清晰的代码分离，提高代码的可维护性和可测试性。 <br>&emsp;&emsp;当然，DataBinding 也有一些局限性，比如调试相对困难，错误信息不够直观等。但总体来说，DataBinding 是一个非常强大的工具，能够显著提高 Android 开发的效率和质量。</p>
+<hr>
+<h2 id="六-DataBinding和ViewBinding的区别"><a href="#六-DataBinding和ViewBinding的区别" class="headerlink" title="六.DataBinding和ViewBinding的区别"></a>六.DataBinding和ViewBinding的区别</h2><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>DataBinding</th>
+<th>ViewBinding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>布局要求</strong></td>
+<td>需在布局中使用 <code>&lt;layout&gt;</code> 标签包裹</td>
+<td>无需特殊标签，自动为所有布局生成绑定类</td>
+</tr>
+<tr>
+<td><strong>数据绑定支持</strong></td>
+<td>支持表达式、双向绑定、观察数据变化</td>
+<td>仅支持视图绑定，无数据绑定功能</td>
+</tr>
+<tr>
+<td><strong>性能影响</strong></td>
+<td>较高（处理表达式和绑定逻辑）</td>
+<td>较低（纯视图引用生成）</td>
+</tr>
+<tr>
+<td><strong>生成类名</strong></td>
+<td>基于布局文件名生成 <code>Binding</code> 类（如 <code>ActivityMainBinding</code>）</td>
+<td>生成 <code>Binding</code> 类（如 <code>ActivityMainBinding</code>）</td>
+</tr>
+<tr>
+<td><strong>空安全</strong></td>
+<td>自动处理空安全</td>
+<td>自动处理空安全</td>
+</tr>
+<tr>
+<td><strong>包含布局</strong></td>
+<td>支持 <code>include</code> 布局的变量传递</td>
+<td>支持 <code>include</code>，但不支持直接传递变量</td>
+</tr>
+<tr>
+<td><strong>与 LiveData 集成</strong></td>
+<td>直接支持 LiveData 观察</td>
+<td>需手动处理生命周期</td>
+</tr>
+<tr>
+<td><strong>适配器支持</strong></td>
+<td>支持自定义绑定适配器（<code>@BindingAdapter</code>）</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td><strong>用法示例</strong></td>
+<td><code>binding.textView.text = viewModel.name</code></td>
+<td><code>binding.textView.text = &quot;Hello&quot;</code></td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>需要数据驱动UI、双向绑定的复杂界面</td>
+<td>仅需替代 <code>findViewById</code> 的简单场景</td>
+</tr>
+<tr>
+<td><strong>APK 大小影响</strong></td>
+<td>较大（包含数据绑定库）</td>
+<td>较小（仅视图绑定功能）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七-小结"><a href="#七-小结" class="headerlink" title="七.小结"></a>七.小结</h2><p>&emsp;&emsp;至此，Jetpack 四件套的学习之旅已经完成。希望这四篇文章能够帮助大家更好地理解和使用 Jetpack 组件，构建更加健壮、可维护的 Android 应用。其实关于架构，仁者见仁智者见智，在做一个新项目时，我认为比较简单的应用无论选择MVP、MVVM还是MVI 个人认为都是对的，差别不大。Jetpack相关的组件是否需要使用，也需要从项目大小程度，还有团队人员是否熟悉等多个角度来考虑。就比如今天所写的DataBinding其实相对来说比较适用于稍微大型一点的项目。在我们公司真实的小项目中，我们使用ViewBinding反而更多。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Jetpack</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2026/03/29/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BDataBinding%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Android业务架构Jetpack四件套之ViewModel篇（三）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -642,262 +1232,9 @@
 
 
   
-    <article id="post-okhttp源码分析之CallServerInterceptor篇（六）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/">okhttp源码分析之CallServerInterceptor篇（六）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-10-29T07:38:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-10-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;CallServerInterceptor是okhttp的最后一个拦截器，这篇博文也算okhttp系列的最后一篇了，看完okhttp的源码，目前在脑海中已经有一整套的流程图。CallServerInterceptor顾名思义，对服务器进行网络调用，今天还是从源码出发，逐步解析</p>
-<hr>
-<h2 id="二-源码解析"><a href="#二-源码解析" class="headerlink" title="二.源码解析"></a>二.源码解析</h2><p>&emsp;&emsp;CallServerInterceptor也是Interceptor的一个实现类，它的功能是和服务器搭建socket连接，同时创建httpStream，通过sink往服务器写入请求信息，通过source读取服务返回的响应信息，详细的我们看看源码</p>
-<pre><code>@Throws(IOException::class)
-override fun intercept(chain: Interceptor.Chain): Response {
-val realChain = chain as RealInterceptorChain
-val exchange = realChain.exchange!!
-val request = realChain.request
-val requestBody = request.body
-val sentRequestMillis = System.currentTimeMillis()
-//向exchange中写入头部信息
-exchange.writeRequestHeaders(request)</code></pre>
-        
-          <a class="article-more-a" href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/10/29/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCallServerInterceptor%E7%AF%87%EF%BC%88%E5%85%AD%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-okhttp源码分析之ConnectInterceptor篇（五）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/">okhttp源码分析之ConnectInterceptor篇（五）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-10-22T08:43:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-10-22</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;最近的项目比较多，关于okhttp的更新也停了一段时间，现在项目忙完，也会继续深入学习okhttp，每篇博文也只是自己学习的记录。okhttp的系列文章已经是第五篇了，本篇文章主要分析ConnectInterceptor连接拦截器，它的作用就是和服务端建立连接，并调用下一个拦截器。</p>
-<hr>
-<h2 id="二-源码解析"><a href="#二-源码解析" class="headerlink" title="二.源码解析"></a>二.源码解析</h2><p>&emsp;&emsp;ConnectInterceptor是Interceptor的一个实现类，打开ConnectInterceptor的源码，可能你的小脑袋里会出现很多问号，怎么会这么简洁，我们一步一步来看</p>
-<pre><code>object ConnectInterceptor : Interceptor {
-  @Throws(IOException::class)
-  override fun intercept(chain: Interceptor.Chain): Response {
-    val realChain = chain as RealInterceptorChain
-    val exchange = realChain.call.initExchange(chain)
-    val connectedChain = realChain.copy(exchange = exchange)
-    return connectedChain.proceed(realChain.request)
-  }
-}</code></pre>
-        
-          <a class="article-more-a" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/10/22/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BConnectInterceptor%E7%AF%87%EF%BC%88%E4%BA%94%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-okhttp源码分析之CacheInterceptor篇（四）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/06/26/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCacheInterceptor%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/">okhttp源码分析之CacheInterceptor篇（四）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/06/26/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCacheInterceptor%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-06-26T07:30:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;这一篇是okhttp的拦截器篇的第四篇，前面的几个拦截器的源代码还较为简单，CacheInterceptor是拦截器中的比较重要的一个，它是处理与缓存相关的，话不多说，还是从源码出发。</p>
-<hr>
-<h2 id="二-源码解析"><a href="#二-源码解析" class="headerlink" title="二.源码解析"></a>二.源码解析</h2><p>&emsp;&emsp;CacheInterceptor也是基于http的缓存原理，没有缓存时发起请求获取数据，然后更新缓存，如果有缓存，则直接返回缓存数据，我们看下源码</p>
-<h3 id="Request"><a href="#Request" class="headerlink" title="Request"></a>Request</h3>
-        
-          <a class="article-more-a" href="/2020/06/26/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCacheInterceptor%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/06/26/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCacheInterceptor%E7%AF%87%EF%BC%88%E5%9B%9B%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next</a>
     </nav>
   
 
@@ -988,15 +1325,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">Handler</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">内存泄露</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">进程保活</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -1013,6 +1350,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">adb</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">性能优化</a>
               </li>
              
               <li class="article-tag-list-item">
