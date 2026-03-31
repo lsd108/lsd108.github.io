@@ -155,7 +155,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="一次安卓包体积优化小记"><a href="#一次安卓包体积优化小记" class="headerlink" title="一次安卓包体积优化小记"></a>一次安卓包体积优化小记</h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;我们公司的最近我负责的项目遇到了这样的问题：经过几个版本的迭代后，APK 文件已经从最初的 30MB 增长到了接近 100MB。面对这个严峻的问题，我决定进行一次全面的包体积优化。在这个过程中，从最初的包体积分析，到资源压缩、代码混淆、无用代码清理，再到最终的优化效果验证，每一个环节都值得记录。 <br>&emsp;&emsp;写这篇博客的目的，就是希望能够记录下这次包体积优化的完整过程，分享我在实践中总结的经验和教训。</p>
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;我们公司的最近我负责的项目遇到了这样的问题：经过几个版本的迭代后，APK 文件已经从最初的 30MB 增长到了接近 100MB。面对这个严峻的问题，我决定进行一次全面的包体积优化。在这个过程中，从最初的包体积分析，到资源压缩、代码混淆、无用代码清理，再到最终的优化效果验证，每一个环节都值得记录。 <br>&emsp;&emsp;写这篇博客的目的，就是希望能够记录下这次包体积优化的完整过程，分享我在实践中总结的经验和教训。</p>
 <hr>
 <h2 id="二-Apk包结构"><a href="#二-Apk包结构" class="headerlink" title="二.Apk包结构"></a>二.Apk包结构</h2><p>&emsp;&emsp;在做包体积优化之前，我们需要了解一下apk文件中都包含了什么。我们将一个测试apk文件直接拖到Android studio中，我们能看到apk整体目录结构如下：<br><img src="https://lsd108.github.io/image/apk%E5%88%86%E6%9E%90.png" alt="class"><br>&emsp;&emsp;我们可以看到Apk的构成主要有以下几个部分：</p>
 <ul>
@@ -1407,6 +1407,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">插件化</a>
               </li>
              
@@ -1416,14 +1424,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
               </li>
              
               <li class="article-tag-list-item">
