@@ -135,6 +135,142 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-一次安卓包体积优化小记" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2026/03/31/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%8C%85%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0/">一次安卓包体积优化小记</a>
+    </h1>
+  
+
+        
+        <a href="/2026/03/31/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%8C%85%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0/" class="archive-article-date">
+  	<time datetime="2026-03-31T02:36:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-31</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="一次安卓包体积优化小记"><a href="#一次安卓包体积优化小记" class="headerlink" title="一次安卓包体积优化小记"></a>一次安卓包体积优化小记</h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;我们公司的最近我负责的项目遇到了这样的问题：经过几个版本的迭代后，APK 文件已经从最初的 30MB 增长到了接近 100MB。面对这个严峻的问题，我决定进行一次全面的包体积优化。在这个过程中，从最初的包体积分析，到资源压缩、代码混淆、无用代码清理，再到最终的优化效果验证，每一个环节都值得记录。 <br>&emsp;&emsp;写这篇博客的目的，就是希望能够记录下这次包体积优化的完整过程，分享我在实践中总结的经验和教训。</p>
+<hr>
+<h2 id="二-Apk包结构"><a href="#二-Apk包结构" class="headerlink" title="二.Apk包结构"></a>二.Apk包结构</h2><p>&emsp;&emsp;在做包体积优化之前，我们需要了解一下apk文件中都包含了什么。我们将一个测试apk文件直接拖到Android studio中，我们能看到apk整体目录结构如下：<br><img src="https://lsd108.github.io/image/apk%E5%88%86%E6%9E%90.png" alt="class"><br>&emsp;&emsp;我们可以看到Apk的构成主要有以下几个部分：</p>
+<ul>
+<li>1.assets目录：存放需要打包到Apk中的静态文件</li>
+<li>2.lib目录：程序依赖的native库，so文件目录，可能会有armeabi、armeabi-v7a、arm64-v8a、x86、x86_64等各种架构</li>
+<li>3.res目录：存放应用资源的资源文件夹</li>
+<li>4.META-INF目录：存放应用程序签名和证书的目录</li>
+<li>5.AndroidManifest.xml：应用程序的配置文件</li>
+<li>6.classes.dex：dex可执行文件</li>
+<li>7.resource.arsc：资源配置文件</li>
+</ul>
+<h2 id="三-Apk的打包流程"><a href="#三-Apk的打包流程" class="headerlink" title="三. Apk的打包流程"></a>三. Apk的打包流程</h2><p>&emsp;&emsp;贴一张官网的截图，APK打包流程主要包括资源编译、代码编译、DEX转换、资源与代码合并、APK签名和对齐优化等步骤，最终生成一个可在Android设备上安装运行的压缩包。 <br><img src="https://i.loli.net/2019/12/16/7pwk4WsvazBxMcQ.png" alt=""></p>
+<h4 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程:"></a>整体流程:</h4><ul>
+<li>通过AAPT工具进行资源文件 打包，生成R.java、resources.arsc和res文件</li>
+<li>通过AIDL工具处理AIDL文件，生成对应的Java接口文件。</li>
+<li>通过Java Compiler编译R.java、Java接口文件、Java源文件，生成.class文件。</li>
+<li>通过dex命令，将.class文件和第三方库中的.class文件处理生成classes.dex，该过程主要完成Java字节码转换成Dalvik字节码，压缩常量池以及清除冗余信息等工作。</li>
+<li>通过ApkBuilder工具将资源文件、DEX文件打包生成APK文件。</li>
+<li>通过Jarsigner工具，利用KeyStore对生成的APK文件进行签名。</li>
+<li>关于assets和res/raw，会有不同的处理。这两个文件目录里的文件都会直接在打包apk的时候直接打包到apk中，携带在应用里面供应用访问，而且不会被编译成二进制；</li>
+<li>他们的不同点在于：<ul>
+<li>1、assets中的文件资源不会映射到R中，而res中的文件都会映射到R中，所以raw文件夹下的资源都有对应的ID</li>
+<li>2、assets可以能有更深的目录结构，而res/raw里面只能有一层目录</li>
+<li>3、资源存取方式不同，assets中利用AssetsManager，而res/raw直接利用getResource()，openRawResource(R.raw.fileName),很多人认为是R.id.filename,其实正确的是R.raw.filename,就像R.drawable.filename一样，整体表示一个ID值，并非是R.id.filename</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="四-优化方案"><a href="#四-优化方案" class="headerlink" title="四.优化方案"></a>四.优化方案</h2><p>&emsp;&emsp;关于包体积的优化，可以从三个角度着手：代码优化，资源文件优化，以及so优化。接下来，我将慢慢向大家展开描述我的操作过程。</p>
+<h3 id="代码优化"><a href="#代码优化" class="headerlink" title="代码优化"></a>代码优化</h3><ul>
+<li>代码混淆：代码混淆可以使用Proguard，Proguard是一个很强悍的工具，Proguard 可以帮你在代码编译时对代码进行混淆，优化和压缩；</li>
+<li>删除无用资源：使用androidStudio，右击任何文件，选择Refactor-&gt;Remove Unused Resources删除无用资源(不要勾选清除id)。或者在打包时进行收缩资源，在gradle中进行如下设置；</li>
+</ul>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">buildType&#123;</span><br><span class="line">    <span class="built_in">release</span>&#123;</span><br><span class="line">        shrinkResources <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>仅支持中文打包模式：如果国内应用可以只支持中文，通过在gradle中设置各类lib的语言模式</li>
+</ul>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">default</span>Config&#123;</span><br><span class="line">    resConfigs <span class="string">"zh"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>统一appUI风格：复用按钮按压效果等ahape，列表的item使用相同的selector</li>
+<li>使用lint：使用androidStudio中的Lint工具，化不规范代码。<br>在androidStudio的Inspect Code对工程做静态代码检查，去除无用代码<br><br><img src="https://lsd108.github.io/image/lint%E5%88%86%E6%9E%90.png" alt=""></li>
+</ul>
+<h3 id="资源文件优化"><a href="#资源文件优化" class="headerlink" title="资源文件优化"></a>资源文件优化</h3><ul>
+<li>动态下载资源：针对字体、js代码、图片等部分资源，做到闲时下载；</li>
+<li>图片压缩：图片压缩目前已知最优方案是tinypng，可以使用TinyPIC_Gradle_Plugin工具配置tinypng来进行图片压缩；</li>
+</ul>
+<ul>
+<li>使用webp：webp是android4.0+以上版本原生支持的一种图片格式。webp的图片大小低于png，jpg，但是有缺点，其一，兼容性不好，最低支持到4.2.1；其二，不便于预览，需要使用浏览器打开；</li>
+<li>使用SVG：SVG又叫缩放矢量图，因为SVG的放大缩小，图片质量保持不变，所以使用SVG可以节约内存空间大小，进而减小 APK 的体积。使用SVG也有缺点，其一，可能不兼容第三方库；其二，不方便管理，SVG的图片统一在drawable目录下，命名需要规范，需要同shape等资源做区分；</li>
+<li>压缩资源文件：有些资源文件是必须要随着app一并发布的，对于这样的文件，可以采用压缩存储的方式，在需要资源的时候将其解压使用。android上也有一个7z库帮助我们方便的使用7z</li>
+</ul>
+<h3 id="so优化"><a href="#so优化" class="headerlink" title="so优化"></a>so优化</h3><ul>
+<li>配置abiFilters：关于so包瘦身推荐大家移除多余的so架构，一个硬件设备对应一个架构（mips、arm或者x86），只保留与设备架构相关的库文件夹（主流的架构都是arm的，mips属于小众，默认也是支持arm的so的，但x86的不支持）可以大大降低lib文件夹的大小，移除配置如下:</li>
+</ul>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">defaultConfig</span> &#123;</span><br><span class="line">    <span class="section">ndk</span> &#123;</span><br><span class="line">        <span class="attribute">abiFilters</span> <span class="string">"armeabi"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对工程中的so库进行压缩：使用android:extractNativeLibs = true指令时，gradle打包时会对工程中的so库进行压缩，最终生成apk包的体积会减小。 但是用户在手机端进行apk安装时，系统会对压缩后的so库进行解压，从而造成用户安装apk的时间变长</li>
+</ul>
+<hr>
+<h2 id="五-小结"><a href="#五-小结" class="headerlink" title="五.小结"></a>五.小结</h2><p>&emsp;&emsp;这篇文章主要说了三部分内容，第一部分内容是Apk包结构；第二部分内容是针对Res资源优化第三部分内容是优化方案。其中，优化方案，主要包括代码优化、资源文件优化和so优化。<br><br>&emsp;&emsp;后续会继续更新安卓性能优化的其余篇章，敬请期待。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">性能优化</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2026/03/31/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%8C%85%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-一次安卓内存优化小记之代码优化、工具使用篇（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1146,92 +1282,6 @@ class UserProfileViewModel : ViewModel() {
 
 
   
-    <article id="post-一次奇怪的需求之基于adb的usb传输数据" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/">一次奇怪的需求之基于adb的usb传输数据</a>
-    </h1>
-  
-
-        
-        <a href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/" class="archive-article-date">
-  	<time datetime="2020-11-13T02:29:22.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-11-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;笔者现在的公司是一家机器人科技公司，所以对于安卓开发来说，要做的不仅仅是普通项目的架构和界面ui的绘制了，往往还涉及到和电子端硬件的通讯。在安卓开发中，字符串、文件以及视频流的传输通常依赖于网络，但是笔者这次却接到这样的一个需求，只通过usb线，不依赖于网络传输以上数据。当时听到这个需求，说实话脑袋里的确有很多问号，usb串口传输使用谷歌的serialPort是可以传输字符串的（网上有很多相关的资料，这里丢一个<a href="https://juejin.im/post/6844903606982967303#heading-6" target="_blank" rel="noopener">串口通讯</a>链接），但是有关大文件和视频流如何传输呢，答案是基于adb的usb传输数据，详细的听我慢慢道来</p>
-<hr>
-<h2 id="二-实现方案思路"><a href="#二-实现方案思路" class="headerlink" title="二.实现方案思路"></a>二.实现方案思路</h2><ul>
-<li>在安卓端和pc端使用usb线连接后，通过adb命令转接端口</li>
-<li>安卓端作为server,监听socket请求</li>
-<li>PC端作为client,请求socket连接</li>
-</ul>
-        
-          <a class="article-more-a" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">usb传输数据</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">adb</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/11/13/%E4%B8%80%E6%AC%A1%E5%A5%87%E6%80%AA%E7%9A%84%E9%9C%80%E6%B1%82%E4%B9%8B%E5%9F%BA%E4%BA%8Eadb%E7%9A%84usb%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next</a>
@@ -1357,14 +1407,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">插件化</a>
               </li>
              
@@ -1374,6 +1416,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">ASM</a>
               </li>
              
               <li class="article-tag-list-item">
