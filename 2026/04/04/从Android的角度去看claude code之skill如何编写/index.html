@@ -6,19 +6,23 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://yoursite.com">
-  <title>eventbus源码分析之post,postSticky流程分析（三） | Lsd&#39;s blog</title>
+  <title>从Android的角度去看claude code之skill如何编写 | Lsd&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。  二.eventbus的post普通事件发布&amp;emsp;&amp;emsp;当我们发布一个普通事件时，一般会这样写： EventBus.getDefault().post(event);&amp;emsp;&amp;emsp">
+  <meta name="description" content="一.前言&amp;emsp;&amp;emsp;2026年，国内各大公司开始爆发ai浪潮，几乎所有程序员都会在工作都开始使用ai。在这个浪潮下，国内外的大模型更新几乎是指数级的，每天都会有新的消息席卷而来。关于ai，笔者使用过cursor和trae这两个桌面端的ide软件，但是这篇文章主要想讲一下claude code。它和前两者不一样，它是基于命令行的，网上关于claude code的安装和使用教程之类的文章有">
 <meta property="og:type" content="article">
-<meta property="og:title" content="eventbus源码分析之post,postSticky流程分析（三）">
-<meta property="og:url" content="http://yoursite.com/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/index.html">
+<meta property="og:title" content="从Android的角度去看claude code之skill如何编写">
+<meta property="og:url" content="http://yoursite.com/2026/04/04/%E4%BB%8EAndroid%E7%9A%84%E8%A7%92%E5%BA%A6%E5%8E%BB%E7%9C%8Bclaude%20code%E4%B9%8Bskill%E5%A6%82%E4%BD%95%E7%BC%96%E5%86%99/index.html">
 <meta property="og:site_name" content="Lsd&#39;s blog">
-<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。  二.eventbus的post普通事件发布&amp;emsp;&amp;emsp;当我们发布一个普通事件时，一般会这样写： EventBus.getDefault().post(event);&amp;emsp;&amp;emsp">
-<meta property="article:published_time" content="2020-02-28T12:08:08.000Z">
-<meta property="article:modified_time" content="2020-04-01T16:49:32.446Z">
+<meta property="og:description" content="一.前言&amp;emsp;&amp;emsp;2026年，国内各大公司开始爆发ai浪潮，几乎所有程序员都会在工作都开始使用ai。在这个浪潮下，国内外的大模型更新几乎是指数级的，每天都会有新的消息席卷而来。关于ai，笔者使用过cursor和trae这两个桌面端的ide软件，但是这篇文章主要想讲一下claude code。它和前两者不一样，它是基于命令行的，网上关于claude code的安装和使用教程之类的文章有">
+<meta property="og:image" content="https://lsd108.github.io/image/ClaudeCode%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg">
+<meta property="og:image" content="https://lsd108.github.io/image/skill%E7%BC%96%E5%86%991.png">
+<meta property="og:image" content="https://lsd108.github.io/image/skill%E7%BC%96%E5%86%992.png">
+<meta property="article:published_time" content="2026-04-04T05:46:29.000Z">
+<meta property="article:modified_time" content="2026-04-04T05:52:31.987Z">
 <meta property="article:author" content="李思达">
-<meta property="article:tag" content="Eventbus">
+<meta property="article:tag" content="ai">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lsd108.github.io/image/ClaudeCode%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg">
   
     <link rel="alternative" href="/atom.xml" title="Lsd&#39;s blog" type="application/atom+xml">
   
@@ -138,230 +142,73 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-eventbus源码分析之post,postSticky流程分析（三）" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-从Android的角度去看claude code之skill如何编写" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      eventbus源码分析之post,postSticky流程分析（三）
+      从Android的角度去看claude code之skill如何编写
     </h1>
   
 
         
-        <a href="/2020/02/28/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bpost,postSticky%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%B8%89%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-02-28T12:08:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-02-28</time>
+        <a href="/2026/04/04/%E4%BB%8EAndroid%E7%9A%84%E8%A7%92%E5%BA%A6%E5%8E%BB%E7%9C%8Bclaude%20code%E4%B9%8Bskill%E5%A6%82%E4%BD%95%E7%BC%96%E5%86%99/" class="archive-article-date">
+  	<time datetime="2026-04-04T05:46:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-04-04</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;eventbus的post和postSticky都是事件发布，那么普通事件和粘性事件的区别和各自的特点是怎样的呢？不要着急，今天的博文依旧会从源码出发带大家分析一波。</p>
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;2026年，国内各大公司开始爆发ai浪潮，几乎所有程序员都会在工作都开始使用ai。在这个浪潮下，国内外的大模型更新几乎是指数级的，每天都会有新的消息席卷而来。关于ai，笔者使用过cursor和trae这两个桌面端的ide软件，但是这篇文章主要想讲一下claude code。它和前两者不一样，它是基于命令行的，网上关于claude code的安装和使用教程之类的文章有很多，这里也不做赘述。 <br>&emsp;&emsp;写这篇博客的目的，也是为了学习记录一下ai的知识。本文将从Android开发者的视角出发，从我自己的理解讲一下MCP、Rules、Skill是什么，三者的区别，并编写一个真正能提升Android开发效率的Skill。</p>
 <hr>
-<h2 id="二-eventbus的post普通事件发布"><a href="#二-eventbus的post普通事件发布" class="headerlink" title="二.eventbus的post普通事件发布"></a>二.eventbus的post普通事件发布</h2><p>&emsp;&emsp;当我们发布一个普通事件时，一般会这样写：</p>
-<pre><code>EventBus.getDefault().post(event);</code></pre><p>&emsp;&emsp;接下来我们直接看看post方法</p>
-<a id="more"></a>   
-<pre><code>public void post(Object event) {
-    //通过currentPostingThreadState获取当前线程的PostingThreadState对象
-    PostingThreadState postingState = currentPostingThreadState.get();
-    //通过postingStat中获取事件队列的list
-    List&lt;Object&gt; eventQueue = postingState.eventQueue;
-    eventQueue.add(event);
-    //判断事件是否发布
-    if (!postingState.isPosting) {
-        //判断是否是主线程
-        postingState.isMainThread = isMainThread();
-        postingState.isPosting = true;
-        //发布状态是否被取消
-        if (postingState.canceled) {
-            throw new EventBusException(&quot;Internal error. Abort state was not reset&quot;);
-        }
-        try {
-           //遍历eventQueue事件队列，取出事件event进行分发
-            while (!eventQueue.isEmpty()) {
-                postSingleEvent(eventQueue.remove(0), postingState);
-            }
-        } finally {
-            //复位操作
-            postingState.isPosting = false;
-            postingState.isMainThread = false;
-        }
-    }
-}
-//ThreadLocal存储，避免并发问题
-private final ThreadLocal&lt;PostingThreadState&gt; currentPostingThreadState = new ThreadLocal&lt;PostingThreadState&gt;() {
-    @Override
-    protected PostingThreadState initialValue() {
-        return new PostingThreadState();
-    }
-};
-
-final static class PostingThreadState {
-    final List&lt;Object&gt; eventQueue = new ArrayList&lt;&gt;();//事件队列的集合
-    boolean isPosting;//事件是否在发布
-    boolean isMainThread;//当前是否处于是否处于主线程
-    Subscription subscription;//订阅信息
-    Object event;//当前事件
-    boolean canceled;//发布的事件是否取消
-}</code></pre><p>&emsp;&emsp;post方法中有两个重点：</p>
+<h2 id="二-一张图看懂全部结构"><a href="#二-一张图看懂全部结构" class="headerlink" title="二.一张图看懂全部结构"></a>二.一张图看懂全部结构</h2><p><img src="https://lsd108.github.io/image/ClaudeCode%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg" alt="class"></p>
+<hr>
+<h2 id="三-什么是MCP？"><a href="#三-什么是MCP？" class="headerlink" title="三.什么是MCP？"></a>三.什么是MCP？</h2><p>&emsp;&emsp;MCP全称Model Context Protocol（模型上下文协议），是Anthropic推出的一种开放协议，旨在让AI模型能够安全、可控地访问外部工具和数据源。简单来说，它就像AI的“USB接口”——通过这个协议，AI可以读取本地文件、执行命令、调用API，甚至操作数据库。<br>&emsp;&emsp;从Android开发的角度看，MCP可以让Claude直接：</p>
 <ul>
-<li>currentPostingThreadState<br><br>&emsp;&emsp;currentPostingThreadState实际上是一个ThreadLocal，这样的使用方式在很大程度上可以避免多线程并发问题。它存储的PostingThreadState包含事件发布过程中的相关信息。</li>
-<li>postSingleEvent<br><br>&emsp;&emsp;通过while循环遍历事件队列，取出每个事件，然后调用postSingleEvent发布事件，同时将相应事件从队列中remove</li>
+<li>读取Android项目源码：通过MCP的filesystem工具，AI可以直接分析build.gradle、AndroidManifest.xml等文件。</li>
+<li>执行Gradle命令：借助MCP的shell工具，AI可以运行./gradlew assembleDebug来获取编译信息。</li>
+<li>查询在线文档：通过MCP的web搜索工具，AI可以实时获取Android官方文档或Stack Overflow上的解决方案。</li>
 </ul>
-<p><br>下面我们重点看一下postSingleEvent方法</p>
-<h3 id="postSingleEvent"><a href="#postSingleEvent" class="headerlink" title="postSingleEvent"></a>postSingleEvent</h3><pre><code>private void postSingleEvent(Object event, PostingThreadState postingState) throws Error {
-    Class&lt;?&gt; eventClass = event.getClass();
-    //是否发现该事件对应的订阅方法，默认为false
-    boolean subscriptionFound = false;
-    //判断是否支持事件继承
-    if (eventInheritance) {
-        //通过lookupAllEventTypes方法从缓存中获取到所有的事件类型
-        List&lt;Class&lt;?&gt;&gt; eventTypes = lookupAllEventTypes(eventClass);
-        int countTypes = eventTypes.size();
-        for (int h = 0; h &lt; countTypes; h++) {
-            Class&lt;?&gt; clazz = eventTypes.get(h);
-            //发布事件
-            subscriptionFound |= postSingleEventForEventType(event, postingState, clazz);
-        }
-    } else {
-        //直接发布事件
-        subscriptionFound = postSingleEventForEventType(event, postingState, eventClass);
-    }
-    //判断是否发现该事件对应的订阅方法
-    if (!subscriptionFound) {
-        if (logNoSubscriberMessages) {
-            logger.log(Level.FINE, &quot;No subscribers registered for event &quot; + eventClass);
-        }
-        if (sendNoSubscriberEvent &amp;&amp; eventClass != NoSubscriberEvent.class &amp;&amp;
-                eventClass != SubscriberExceptionEvent.class) {
-            //发布NoSubscriberEvent事件
-            post(new NoSubscriberEvent(this, event));
-        }
-    }
-}</code></pre><p>&emsp;&emsp;简单总结一下上述源码的流程，首先判断是否支持事件继承，如果支持，则通过lookupAllEventTypes方法从缓存中获取到所有的事件类型，再调用postSingleEventForEventType发布事件；如果不支持，直接调用postSingleEventForEventType，所以接下来我们要看的就是这里的逻辑了。</p>
-<h3 id="postSingleEventForEventType"><a href="#postSingleEventForEventType" class="headerlink" title="postSingleEventForEventType"></a>postSingleEventForEventType</h3><pre><code>private boolean postSingleEventForEventType(Object event, PostingThreadState postingState, Class&lt;?&gt; eventClass) {
-    CopyOnWriteArrayList&lt;Subscription&gt; subscriptions;
-    synchronized (this) {
-        //通过subscriptionsByEventType，传入eventClass，得到事件参数类型对应的subscriptions
-        subscriptions = subscriptionsByEventType.get(eventClass);
-    }
-    if (subscriptions != null &amp;&amp; !subscriptions.isEmpty()) {
-        for (Subscription subscription : subscriptions) {
-            postingState.event = event;
-            postingState.subscription = subscription;
-            boolean aborted;
-            try {
-                //将事件发送给subscription中保存的订阅方法
-                postToSubscription(subscription, event, postingState.isMainThread);
-                aborted = postingState.canceled;
-            } finally {
-                //复位操作
-                postingState.event = null;
-                postingState.subscription = null;
-                postingState.canceled = false;
-            }
-            if (aborted) {
-                break;
-            }
-        }
-        return true;
-    }
-    return false;
-}</code></pre><p>&emsp;&emsp;再来一个小结，首先通过subscriptionsByEventType方法，得到事件参数类型对应的subscriptions。然后判断subscriptions是否为空，为空直接返回false；不为空，则遍历订阅信息集合，使用postToSubscription发布事件</p>
-<h3 id="postToSubscription"><a href="#postToSubscription" class="headerlink" title="postToSubscription"></a>postToSubscription</h3><pre><code>private void postToSubscription(Subscription subscription, Object event, boolean isMainThread) {
-    //判断线程模式
-    switch (subscription.subscriberMethod.threadMode) {
-        case POSTING:
-            invokeSubscriber(subscription, event);
-            break;
-        case MAIN:
-            if (isMainThread) {
-                invokeSubscriber(subscription, event);
-            } else {
-                mainThreadPoster.enqueue(subscription, event);
-            }
-            break;
-        case MAIN_ORDERED:
-            if (mainThreadPoster != null) {
-                mainThreadPoster.enqueue(subscription, event);
-            } else {
-                // temporary: technically not correct as poster not decoupled from subscriber
-                invokeSubscriber(subscription, event);
-            }
-            break;
-        case BACKGROUND:
-            if (isMainThread) {
-                backgroundPoster.enqueue(subscription, event);
-            } else {
-                invokeSubscriber(subscription, event);
-            }
-            break;
-        case ASYNC:
-            asyncPoster.enqueue(subscription, event);
-            break;
-        default:
-            throw new IllegalStateException(&quot;Unknown thread mode: &quot; + subscription.subscriberMethod.threadMode);
-    }
-}
-
-//EventBus的几个不同线程模式
-public enum ThreadMode {
-    POSTING,
-    MAIN,
-    MAIN_ORDERED,
-    BACKGROUND,
-    ASYNC
-}</code></pre><p>&emsp;&emsp;postToSubscription看到这里，也和eventbus的几个Poster相呼应了，关于ThreadMode的几种，我整理了一个表格。postToSubscription是通过方法注解中定义的ThreadMode来切换当前事件的线程，不管当前是在哪一个线程最后都会通过调用invokeSubscriber来订阅方法，它内部也就是一个反射的机制。</p>
-<table>
-<thead>
-<tr>
-<th>线程模式</th>
-<th>含义</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>POSTING</td>
-<td>事件发布和执行订阅方法在同一个线程</td>
-</tr>
-<tr>
-<td>MAIN</td>
-<td>不管事件发布在哪个线程，执行方法都在主线程</td>
-</tr>
-<tr>
-<td>MAIN_ORDERED</td>
-<td>不管事件发布在哪个线程，执行方法都在主线程，与MAIN的区别是它是通过队列来进行的，并不是直接调用</td>
-</tr>
-<tr>
-<td>BACKGROUND</td>
-<td>事件发布在主线程，则后台线程执行订阅方法；事件发布在子线程，则在该线程执行订阅方法</td>
-</tr>
-<tr>
-<td>ASYNC</td>
-<td>不管事件发布在哪个线程，都开启新的子线程处理</td>
-</tr>
-</tbody></table>
+<p>&emsp;&emsp;MCP使得AI不再是一个孤立的聊天机器人，而是一个能够真正“动手”的开发助手。在ClaudeCode中，MCP相当于底层的能力支撑。</p>
 <hr>
-<h2 id="三-eventbus的postSticky粘性事件发布"><a href="#三-eventbus的postSticky粘性事件发布" class="headerlink" title="三.eventbus的postSticky粘性事件发布"></a>三.eventbus的postSticky粘性事件发布</h2><p>&emsp;&emsp;什么是黏性事件呢？简单来讲，就是在事件发布之后再订阅该事件也能收到该事件    </p>
-<pre><code>EventBus.getDefault().postSticky(event);</code></pre><p>&emsp;&emsp;粘性事件的发布使用也很简单，我们直接源码走起     </p>
-<pre><code>public void postSticky(Object event) {
-    synchronized (stickyEvents) {
-        stickyEvents.put(event.getClass(), event);
-    }
-    post(event);
-}</code></pre><p>&emsp;&emsp;postSticky的逻辑很简单，首先将事件保存到stickyEvents中，然后调用普通事件发布的post方法即可</p>
-<hr>
-<h2 id="四-总结"><a href="#四-总结" class="headerlink" title="四.总结"></a>四.总结</h2><p>&emsp;&emsp;老规矩针对post和postSticky做一个小结：</p>
+<h2 id="四-什么是Rules？"><a href="#四-什么是Rules？" class="headerlink" title="四.什么是Rules？"></a>四.什么是Rules？</h2><p>&emsp;&emsp;Rules（规则）是Claude Code中用于定义项目行为规范和上下文约束的一种机制。你可以把它理解为“给AI看的README”或“项目宪章”。通过在项目根目录的.claude/rules文件夹下创建Markdown文件，你可以告诉AI：</p>
 <ul>
-<li>post <ul>
-<li>1.将需要发布的事件，根据事件类型加入到事件队列中</li>
-<li>2.遍历事件队列，判断线程模式，根据线程模式的不同执行相应的订阅方法</li>
+<li>编码规范：比如“Kotlin文件使用驼峰命名，XML布局ID前缀为@+id/btn_”。</li>
+<li>架构约束：比如“项目使用MVVM架构，ViewModel中不得持有Activity引用”。</li>
+<li>工作流程：比如“修改完代码后必须运行Lint检查并修复问题”。</li>
+<li>禁止事项：比如“不要使用findViewById，请使用ViewBinding”。</li>
 </ul>
-</li>
-<li>postSticky<br><br>&emsp;&emsp;在执行以上步骤一之前，先将该事件放入 stickyEvents中</li>
+<p>&emsp;&emsp;对于Android项目而言，一个典型的android-rules.md可能长这样：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="section"># Android 项目开发规则</span></span><br><span class="line"></span><br><span class="line"><span class="section">## 代码风格</span></span><br><span class="line"><span class="bullet">- </span>使用Kotlin语言，遵循Kotlin官方编码规范。</span><br><span class="line"><span class="bullet">- </span>所有Activity/Fragment必须继承BaseActivity/BaseFragment。</span><br><span class="line"></span><br><span class="line"><span class="section">## 资源管理</span></span><br><span class="line"><span class="bullet">- </span>字符串资源必须定义在<span class="code">`res/values/strings.xml`</span>中，禁止硬编码。</span><br><span class="line"><span class="bullet">- </span>图片资源优先使用WebP格式，并放在<span class="code">`res/drawable-nodpi`</span>目录下。</span><br><span class="line"></span><br><span class="line"><span class="section">## 依赖管理</span></span><br><span class="line"><span class="bullet">- </span>第三方库版本统一在<span class="code">`buildSrc`</span>中管理，禁止在模块中直接写版本号。</span><br><span class="line"></span><br><span class="line"><span class="section">## 提交前检查</span></span><br><span class="line"><span class="bullet">- </span>执行<span class="code">`./gradlew spotlessCheck`</span>检查代码格式。</span><br><span class="line"><span class="bullet">- </span>执行<span class="code">`./gradlew lint`</span>检查代码问题。</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="五-什么是Skill？"><a href="#五-什么是Skill？" class="headerlink" title="五.什么是Skill？"></a>五.什么是Skill？</h2><p>&emsp;&emsp;Skill（技能）是Claude Code中的一种高级封装，它将一组规则、MCP工具调用、以及特定的提示词（prompt）组合成一个可复用的“能力单元”。你可以把Skill理解为“针对特定任务的专家模式”。与Rules不同，Skill通常是按需触发的，并且可以包含复杂的交互逻辑。例如：</p>
+<ul>
+<li>Android代码审查Skill：触发后，AI会主动读取变更文件、运行Lint、检查权限问题、生成审查报告。</li>
+<li>性能分析Skill：AI会自动抓取APK、分析包体积、提供优化建议。</li>
+<li>UI自动化测试Skill：AI根据界面描述生成Espresso测试代码并执行。</li>
 </ul>
-<p>在这里问一个问题，什么情况下使用粘性事件的发布呢？<br><br>&emsp;&emsp;我们说一个场景，我们在一个非ui线程调用网络接口，发布事件，然后在在订阅该事件的订阅方法更新ui。此时，你使用post就可能会导致无法更新，因为你可能在发布事件完成后，当前ui所承载的界面还未加载完毕。此时就需要用到postSticky，粘性事件可以事先发送事件，待接收方订阅后再接受事件，它处理了异步所带来的问题。<br><br>&emsp;&emsp;这篇文章是eventbus系列的最后一篇，相信大家对eventbus的整体流程也有了一个了解，如果在文章存在理解失误的地方，还请见谅。</p>
+<p>&emsp;&emsp;Skill的本质是“将多个能力整合为一个原子操作”。它通常由三个部分组成：</p>
+<ul>
+<li>触发条件：用户显式调用（如/skill android-review）或上下文匹配触发。</li>
+<li>执行步骤：一系列MCP工具调用、代码分析、规则校验。</li>
+<li>输出格式：结构化的报告、代码修改建议或直接的操作结果。</li>
+</ul>
+<hr>
+<h2 id="六-MCP、Rules、Skill三者的区别"><a href="#六-MCP、Rules、Skill三者的区别" class="headerlink" title="六.MCP、Rules、Skill三者的区别"></a>六.MCP、Rules、Skill三者的区别</h2><p>&emsp;&emsp;打个比方：MCP是高速公路，Rules是交通法规，Skill是自动驾驶导航系统。高速公路让车辆（AI）能到达各个地方；交通法规规范了行驶行为；而导航系统则根据目的地和路况自动规划最优路线。</p>
+<hr>
+<h2 id="七-从Android开发的角度写一个Skill"><a href="#七-从Android开发的角度写一个Skill" class="headerlink" title="七.从Android开发的角度写一个Skill"></a>七.从Android开发的角度写一个Skill</h2><p>&emsp;&emsp;理论讲完，我们来实战。下面我将创建一个名为“Android包体积分析Skill”的示例，展示如何将MCP、Rules和Skill结合起来。</p>
+<h4 id="7-1-Skill的目录结构"><a href="#7-1-Skill的目录结构" class="headerlink" title="7.1 Skill的目录结构"></a>7.1 Skill的目录结构</h4><p>&emsp;&emsp;在Claude Code中，Skill通常定义在.claude/skills/android-package-analyzer/目录下。核心文件如下：</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">.claude/</span><br><span class="line">├── rules/</span><br><span class="line">│   └── android-rules.md          <span class="meta"># 项目规则（可选）</span></span><br><span class="line">└── skills/</span><br><span class="line">    └── android-<span class="keyword">package</span>-analyzer/</span><br><span class="line">        ├── skill.md               <span class="meta"># Skill定义文件</span></span><br><span class="line">        └── prompts/</span><br><span class="line">            └── analyze.md         <span class="meta"># 分析提示词（可选）</span></span><br></pre></td></tr></table></figure>
+<h4 id="7-2-编写Skill定义文件（skill-md）"><a href="#7-2-编写Skill定义文件（skill-md）" class="headerlink" title="7.2 编写Skill定义文件（skill.md）"></a>7.2 编写Skill定义文件（skill.md）</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">name:</span> <span class="string">android-package-analyzer</span></span><br><span class="line"><span class="attr">description:</span> <span class="string">分析Android</span> <span class="string">APK包体积，提供优化建议并生成报告</span></span><br><span class="line"><span class="attr">trigger:</span> <span class="string">/apk-analyze</span></span><br><span class="line"><span class="attr">tools:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">filesystem</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">shell</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">mcp_android_tools</span>   <span class="comment"># 假设有一个自定义MCP工具</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Android包体积分析技能</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## 目标</span></span><br><span class="line"><span class="string">对指定的APK文件（或项目编译产物）进行全面分析，输出包体积构成、占比以及针对性的优化建议。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## 执行步骤</span></span><br><span class="line"><span class="number">1</span><span class="string">.</span> <span class="string">如果用户提供了APK路径，直接使用；否则执行`./gradlew</span> <span class="string">assembleRelease`生成APK。</span></span><br><span class="line"><span class="number">2</span><span class="string">.</span> <span class="string">使用`filesystem`工具读取APK文件大小。</span></span><br><span class="line"><span class="number">3</span><span class="string">.</span> <span class="string">调用`shell`执行`unzip</span> <span class="string">-l</span> <span class="string">app.apk`，解析输出获得各目录占比。</span></span><br><span class="line"><span class="number">4</span><span class="string">.</span> <span class="string">根据分析结果，结合Rules中定义的优化策略（如WebP转换、SO裁剪），生成优化建议。</span></span><br><span class="line"><span class="number">5</span><span class="string">.</span> <span class="string">输出一份Markdown格式的报告，包含：</span></span><br><span class="line">   <span class="bullet">-</span> <span class="string">总体大小</span></span><br><span class="line">   <span class="bullet">-</span> <span class="string">各目录（res、lib、dex等）占比饼图（用表格模拟）</span></span><br><span class="line">   <span class="bullet">-</span> <span class="string">具体优化建议（代码、资源、SO）</span></span><br><span class="line"><span class="number">6</span><span class="string">.</span> <span class="string">询问用户是否要执行自动优化（需确认）。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## 依赖规则</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">如果项目中有`.claude/rules/android-rules.md`，其中关于资源压缩和SO裁剪的配置将被自动应用。</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">若未定义规则，则使用默认的最佳实践。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## 示例</span></span><br><span class="line"><span class="string">&gt;</span> <span class="string">/apk-analyze</span> <span class="string">./app/build/outputs/apk/release/app-release.apk</span></span><br><span class="line"><span class="string">&gt;</span> <span class="string">输出：...（分析报告）</span></span><br></pre></td></tr></table></figure>
+<h4 id="7-3-编写分析提示词（prompts-analyze-md）"><a href="#7-3-编写分析提示词（prompts-analyze-md）" class="headerlink" title="7.3 编写分析提示词（prompts/analyze.md）"></a>7.3 编写分析提示词（prompts/analyze.md）</h4><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">你是Android包体积分析专家。请严格按照以下模板输出分析报告。</span><br><span class="line"></span><br><span class="line"><span class="comment">## 分析报告模板</span></span><br><span class="line"></span><br><span class="line"><span class="comment">### 一、总体概览</span></span><br><span class="line">- APK名称：&#123;&#123;apk_name&#125;&#125;</span><br><span class="line">- 总大小：&#123;&#123;total_size&#125;&#125; MB</span><br><span class="line">- 生成时间：&#123;&#123;timestamp&#125;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">### 二、目录构成</span></span><br><span class="line">|<span class="string"> 目录 </span>|<span class="string"> 大小(MB) </span>|<span class="string"> 占比(%) </span>|</span><br><span class="line">|<span class="string">------</span>|<span class="string">----------</span>|<span class="string">--------</span>|</span><br><span class="line">|<span class="string"> lib  </span>|<span class="string"> &#123;&#123;lib&#125;&#125;  </span>|<span class="string"> &#123;&#123;lib_ratio&#125;&#125; </span>|</span><br><span class="line">|<span class="string"> res  </span>|<span class="string"> &#123;&#123;res&#125;&#125;  </span>|<span class="string"> &#123;&#123;res_ratio&#125;&#125; </span>|</span><br><span class="line">|<span class="string"> assets </span>|<span class="string"> &#123;&#123;assets&#125;&#125; </span>|<span class="string"> &#123;&#123;assets_ratio&#125;&#125; </span>|</span><br><span class="line">|<span class="string"> classes*.dex </span>|<span class="string"> &#123;&#123;dex&#125;&#125; </span>|<span class="string"> &#123;&#123;dex_ratio&#125;&#125; </span>|</span><br><span class="line">|<span class="string"> resources.arsc </span>|<span class="string"> &#123;&#123;arsc&#125;&#125; </span>|<span class="string"> &#123;&#123;arsc_ratio&#125;&#125; </span>|</span><br><span class="line">|<span class="string"> 其他 </span>|<span class="string"> &#123;&#123;other&#125;&#125; </span>|<span class="string"> &#123;&#123;other_ratio&#125;&#125; </span>|</span><br><span class="line"></span><br><span class="line"><span class="comment">### 三、优化建议</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#### 代码层</span></span><br><span class="line">- [ ] 检查是否开启`minifyEnabled true`和`shrinkResources true`</span><br><span class="line">- [ ] 检查是否有未使用的代码（通过Lint）</span><br><span class="line">- [ ] 建议启用R8全量优化</span><br><span class="line"></span><br><span class="line"><span class="comment">#### 资源层</span></span><br><span class="line">- [ ] 将PNG转换为WebP（检查res/drawable）</span><br><span class="line">- [ ] 压缩resources.arsc（通过`resConfigs <span class="string">"zh"</span>`移除多余语言资源）</span><br><span class="line">- [ ] 动态下载大图片/字体</span><br><span class="line"></span><br><span class="line"><span class="comment">#### SO层</span></span><br><span class="line">- [ ] 确认abiFilters仅保留必要的架构（如arm64-v8a）</span><br><span class="line">- [ ] 检查是否有重复的SO文件（多个架构间大小差异）</span><br><span class="line">- [ ] 评估SO动态下发的可行性</span><br><span class="line"></span><br><span class="line"><span class="comment">### 四、下一步操作</span></span><br><span class="line">请选择：</span><br><span class="line">1. 自动执行上述优化（需确认）</span><br><span class="line">2. 手动执行其中一部分</span><br><span class="line">3. 仅生成报告</span><br></pre></td></tr></table></figure>
+
+<h4 id="7-4-效果演示"><a href="#7-4-效果演示" class="headerlink" title="7.4 效果演示"></a>7.4 效果演示</h4><p>&emsp;&emsp;当我们在Claude Code中输入/apk-analyze，并传入apk的文件路径，AI会自动执行以下动作，最终会生成一个我们定义的模版的报告：<br><img src="https://lsd108.github.io/image/skill%E7%BC%96%E5%86%991.png" alt="class"><br><img src="https://lsd108.github.io/image/skill%E7%BC%96%E5%86%992.png" alt="class"></p>
+<hr>
+<h2 id="八-小结"><a href="#八-小结" class="headerlink" title="八.小结"></a>八.小结</h2><p>&emsp;&emsp;本文从Android开发者的角度，详细解析了Claude Code中的MCP、Rules、Skill这三个核心概念。MCP是AI与外部世界交互的桥梁；Rules是项目的“行为准则”，确保AI输出符合团队规范；Skill则是将前两者有机组合，形成可复用的自动化工作流。<br>&emsp;&emsp;在实际项目中，你可以根据团队需求，定制更多的Skill——比如UI自动化测试、性能监控、代码生成等。后续如果有时间，我这边会继续更新博客，记录学习到的ai知识。</p>
 
       
 
@@ -375,7 +222,7 @@ public enum ThreadMode {
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">Eventbus</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">ai</a>
         		</li>
       		
 		</ul>
@@ -394,18 +241,9 @@ public enum ThreadMode {
   
 <nav id="article-nav">
   
-    <a href="/2020/05/18/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E8%AF%B7%E6%B1%82%E6%95%B4%E4%BD%93%E6%A6%82%E8%BF%B0%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          okhttp源码分析之请求整体概述（一）
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/02/21/eventbus%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8Bregister%EF%BC%8Cunregister%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90%EF%BC%88%E4%BA%8C%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">eventbus源码分析之register，unregister流程分析（二）</div>
+    <a href="/2026/04/01/%E4%B8%80%E6%AC%A1%E5%AE%89%E5%8D%93%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96%E5%B0%8F%E8%AE%B0/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">一次安卓启动优化小记</div>
       <i class="icon-circle-right"></i>
     </a>
   

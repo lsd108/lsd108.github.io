@@ -135,6 +135,150 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-Android业务架构Jetpack四件套之LiveData篇（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BLiveData%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">Android业务架构Jetpack四件套之LiveData篇（二）</a>
+    </h1>
+  
+
+        
+        <a href="/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BLiveData%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2026-03-28T14:16:29.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-03-28</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;这篇文章，将继续 Jetpack 四件套的学习之旅，聚焦于第二个核心组件 ——LiveData。如果说 Lifecycle 解决了 “何时” 的问题，那么 LiveData 则解决了 “数据如何在不同组件间传递和更新” 的问题。在Android 开发中，数据驱动 UI 已经成为主流范式，而 LiveData 正是这一理念的完美体现。<br><br>&emsp;&emsp;在我们公司的团餐业务平台开发过程中，我发现传统的数据传递方式存在诸多问题：内存泄漏、空指针异常、数据状态不一致等。这些问题不仅影响开发效率，更会导致用户体验下降。而 LiveData 的出现，恰好为我们提供了一种观察者模式的数据持有类，它能够感知组件的生命周期，确保数据只在组件处于活跃状态时才更新 UI。<br><br>&emsp;&emsp;本文将从 LiveData 的基础概念入手，详细介绍其使用方法、核心特性、应用场景，并分析其源码实现。</p>
+<hr>
+<h2 id="二-基础定义"><a href="#二-基础定义" class="headerlink" title="二.基础定义"></a>二.基础定义</h2><ul>
+<li>Android Jetpack LiveData是一个可观察的数据持有者类，它具有生命周期感知能力。</li>
+<li>LiveData 能够感知应用组件（如 Activity、Fragment 或 Service）的生命周期状态，并确保只在组件处于活跃状态时才更新 UI。</li>
+<li>LiveData可以确保UI与数据的同步更新，避免了一些常见的错误，如内存泄漏和UI组件无法正确更新的问题。</li>
+</ul>
+<hr>
+<h2 id="三-基础使用"><a href="#三-基础使用" class="headerlink" title="三. 基础使用"></a>三. 基础使用</h2><ul>
+<li>添加依赖：</li>
+</ul>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">implementation</span> "<span class="selector-tag">androidx</span><span class="selector-class">.lifecycle</span><span class="selector-pseudo">:lifecycle-livedata-ktx</span><span class="selector-pseudo">:2.9.4"</span></span><br><span class="line"><span class="selector-tag">implementation</span> "<span class="selector-tag">androidx</span><span class="selector-class">.lifecycle</span><span class="selector-pseudo">:lifecycle-viewmodel-ktx</span><span class="selector-pseudo">:2.9.4"</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在 ViewModel 中使用 LiveData</li>
+</ul>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserProfileViewModel</span> : <span class="type">ViewModel</span></span>() &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 创建LiveData实例</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> _userProfile = MutableLiveData&lt;UserProfile&gt;()</span><br><span class="line">    <span class="comment">// 对外暴露不可变的LiveData</span></span><br><span class="line">    <span class="keyword">val</span> userProfile: LiveData&lt;UserProfile&gt; = _userProfile</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 加载用户数据</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">loadUserProfile</span><span class="params">(userId: <span class="type">String</span>)</span></span> &#123;</span><br><span class="line">        <span class="comment">// 模拟网络请求</span></span><br><span class="line">        viewModelScope.launch &#123;</span><br><span class="line">            <span class="keyword">val</span> user = repository.getUserProfile(userId)</span><br><span class="line">            _userProfile.value = user</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 结合Room数据库的使用</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">observeUserProfile</span><span class="params">(userId: <span class="type">String</span>)</span></span>: LiveData&lt;UserProfile&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> repository.observeUserProfile(userId)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在 Activity/Fragment 中观察 LiveData</li>
+</ul>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UserProfileActivity</span> : <span class="type">AppCompatActivity</span></span>() &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">lateinit</span> <span class="keyword">var</span> viewModel: UserProfileViewModel</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">onCreate</span><span class="params">(savedInstanceState: <span class="type">Bundle</span>?)</span></span> &#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate(savedInstanceState)</span><br><span class="line">        setContentView(R.layout.activity_user_profile)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 初始化ViewModel</span></span><br><span class="line">        viewModel = ViewModelProvider(<span class="keyword">this</span>).<span class="keyword">get</span>(UserProfileViewModel::<span class="class"><span class="keyword">class</span>.<span class="title">java</span>)</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 观察LiveData数据变化</span></span><br><span class="line">        viewModel.userProfile.observe(<span class="keyword">this</span>, Observer &#123; userProfile -&gt;</span><br><span class="line">            <span class="comment">// 更新UI</span></span><br><span class="line">            updateUI(userProfile)</span><br><span class="line">        &#125;)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 加载数据</span></span><br><span class="line">        viewModel.loadUserProfile(<span class="string">"123456"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="function"><span class="keyword">fun</span> <span class="title">updateUI</span><span class="params">(userProfile: <span class="type">UserProfile</span>)</span></span> &#123;</span><br><span class="line">        tvUserName.text = userProfile.name</span><br><span class="line">        tvUserEmail.text = userProfile.email</span><br><span class="line">        Glide.with(<span class="keyword">this</span>).load(userProfile.avatar).into(ivUserAvatar)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四-应用场景"><a href="#四-应用场景" class="headerlink" title="四.应用场景"></a>四.应用场景</h2><p>Jetpack LiveData组件的实际开发应用场景包括：</p>
+<ul>
+<li>数据驱动 UI 更新：LiveData 最主要的应用场景是实现数据驱动的 UI 更新。当数据发生变化时，LiveData 会自动通知所有活跃的观察者，从而更新 UI。</li>
+<li>网络请求状态管理：LiveData 可以很好地管理网络请求的各种状态：加载中、成功、失败。</li>
+<li>数据库数据观察：与 Room 数据库结合使用，实现对数据库数据变化的实时观察。</li>
+<li>多数据源合并：使用 MediatorLiveData 合并多个数据源，实现复杂的业务逻辑。</li>
+</ul>
+<hr>
+<h2 id="五-源码分析"><a href="#五-源码分析" class="headerlink" title="五.源码分析"></a>五.源码分析</h2><h4 id="LiveData类"><a href="#LiveData类" class="headerlink" title="LiveData类"></a>LiveData类</h4><p>&emsp;&emsp;LiveData类是一个抽象类，它有一个泛型类型T，表示LiveData中存储的数据类型。LiveData类内部维护了一个数据源(mData)和一个观察者列表(mObservers)。LiveData原理是观察者模式，所以我们就先从observe()方法看起：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">public</span> abstract <span class="keyword">class</span> LiveData&lt;T&gt; &#123;</span><br><span class="line">    </span><br><span class="line">    // 添加观察者</span><br><span class="line">    @MainThread</span><br><span class="line">    <span class="built_in">public</span> <span class="type">void</span> observe(@NonNull LifecycleOwner <span class="keyword">owner</span>, @NonNull Observer&lt;? super T&gt; observer) &#123;</span><br><span class="line">        assertMainThread("observe");</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">owner</span>.getLifecycle().getCurrentState() == DESTROYED) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        LifecycleBoundObserver <span class="keyword">wrapper</span> = <span class="built_in">new</span> LifecycleBoundObserver(<span class="keyword">owner</span>, observer);</span><br><span class="line">        ObserverWrapper existing = mObservers.putIfAbsent(observer, <span class="keyword">wrapper</span>);</span><br><span class="line">        <span class="keyword">if</span> (existing != <span class="keyword">null</span> &amp;&amp; !existing.isAttachedTo(<span class="keyword">owner</span>)) &#123;</span><br><span class="line">            throw <span class="built_in">new</span> IllegalArgumentException("Cannot add tobservehe same observer"</span><br><span class="line">                    + " with different lifecycles");</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (existing != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">owner</span>.getLifecycle().addObserver(<span class="keyword">wrapper</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>&emsp;&emsp;在observe()方法中，我们可以知道这个方法的作用是添加观察者：</p>
+<ul>
+<li>1.首先会调用assertMainThread，要求事件必需在主线程分发</li>
+<li>2.判断LifecycleOwner是否是DESTROYED状态，如果是就直接忽略，不能添加</li>
+<li>3.接着使用一个装饰器持有一个oberver观察者</li>
+<li>4.然后会调用一个putIfAbsent方法，只有列表中没有这个observer时才会添加，将装饰器缓存一份</li>
+<li>5.最后将持有者owner调用addObserver方法和装饰器订阅</li>
+</ul>
+<h4 id="LifecycleBoundObserver-类"><a href="#LifecycleBoundObserver-类" class="headerlink" title="LifecycleBoundObserver 类"></a>LifecycleBoundObserver 类</h4><figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">LifecycleBoundObserver</span> extends <span class="type">ObserverWrapper</span> implements <span class="type">LifecycleEventObserver</span> &#123;</span></span><br><span class="line"><span class="class">        </span></span><br><span class="line"><span class="class">        @<span class="type">Override</span></span></span><br><span class="line"><span class="class">        public void onStateChanged(@<span class="type">NonNull</span> <span class="type">LifecycleOwner</span> <span class="title">source</span>,</span></span><br><span class="line"><span class="class">                @<span class="type">NonNull</span> <span class="type">Lifecycle</span>.<span class="type">Event</span> <span class="title">event</span>) &#123;</span></span><br><span class="line"><span class="class">            <span class="type">Lifecycle</span>.<span class="type">State</span> currentState = mOwner.getLifecycle().getCurrentState();</span></span><br><span class="line"><span class="class">            if (<span class="title">currentState</span> == <span class="type">DESTROYED</span>) &#123;</span></span><br><span class="line"><span class="class">                removeObserver(<span class="title">mObserver</span>);</span></span><br><span class="line"><span class="class">                return;</span></span><br><span class="line"><span class="class">            &#125;</span></span><br><span class="line"><span class="class">            <span class="type">Lifecycle</span>.<span class="type">State</span> prevState = null;</span></span><br><span class="line"><span class="class">            while (<span class="title">prevState</span> != <span class="title">currentState</span>) &#123;</span></span><br><span class="line"><span class="class">                prevState = currentState;</span></span><br><span class="line"><span class="class">                activeStateChanged(<span class="title">shouldBeActive</span>());</span></span><br><span class="line"><span class="class">                currentState = mOwner.getLifecycle().getCurrentState();</span></span><br><span class="line"><span class="class">            &#125;</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line"><span class="class">    &#125;</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class">void dispatchingValue(@<span class="type">Nullable</span> <span class="type">ObserverWrapper</span> <span class="title">initiator</span>) &#123;</span></span><br><span class="line"><span class="class">        if (<span class="title">mDispatchingValue</span>) &#123;</span></span><br><span class="line"><span class="class">            mDispatchInvalidated = true;</span></span><br><span class="line"><span class="class">            return;</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line"><span class="class">        mDispatchingValue = true;</span></span><br><span class="line"><span class="class">        do &#123;</span></span><br><span class="line"><span class="class">            mDispatchInvalidated = false;</span></span><br><span class="line"><span class="class">            if (<span class="title">initiator</span> != <span class="title">null</span>) &#123;</span></span><br><span class="line"><span class="class">                considerNotify(<span class="title">initiator</span>);</span></span><br><span class="line"><span class="class">                initiator = null;</span></span><br><span class="line"><span class="class">            &#125; else &#123;</span></span><br><span class="line"><span class="class">                for (<span class="type">Iterator</span>&lt;<span class="type">Map</span>.<span class="type">Entry</span>&lt;<span class="type">Observer</span>&lt;? <span class="title">super</span> <span class="type">T</span>&gt;, <span class="type">ObserverWrapper</span>&gt;&gt; <span class="title">iterator</span> =</span></span><br><span class="line"><span class="class">                        <span class="title">mObservers</span>.<span class="title">iteratorWithAdditions</span>(); iterator.hasNext(); ) &#123;</span></span><br><span class="line"><span class="class">                    considerNotify(<span class="title">iterator</span>.<span class="title">next</span>().getValue());</span></span><br><span class="line"><span class="class">                    if (<span class="title">mDispatchInvalidated</span>) &#123;</span></span><br><span class="line"><span class="class">                        break;</span></span><br><span class="line"><span class="class">                    &#125;</span></span><br><span class="line"><span class="class">                &#125;</span></span><br><span class="line"><span class="class">            &#125;</span></span><br><span class="line"><span class="class">        &#125; while (<span class="title">mDispatchInvalidated</span>);</span></span><br><span class="line"><span class="class">        mDispatchingValue = false;</span></span><br><span class="line"><span class="class">    &#125;</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class">private void considerNotify(<span class="type">ObserverWrapper</span> <span class="title">observer</span>) &#123;</span></span><br><span class="line"><span class="class">        if (!<span class="title">observer</span>.<span class="title">mActive</span>) &#123;</span></span><br><span class="line"><span class="class">            return;</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line"><span class="class">        if (!<span class="title">observer</span>.<span class="title">shouldBeActive</span>()) &#123;</span></span><br><span class="line"><span class="class">            observer.activeStateChanged(<span class="title">false</span>);</span></span><br><span class="line"><span class="class">            return;</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line"><span class="class">        if (<span class="title">observer</span>.<span class="title">mLastVersion</span> &gt;= <span class="title">mVersion</span>) &#123;</span></span><br><span class="line"><span class="class">            return;</span></span><br><span class="line"><span class="class">        &#125;</span></span><br><span class="line"><span class="class">        observer.mLastVersion = mVersion;</span></span><br><span class="line"><span class="class">        observer.mObserver.onChanged((<span class="type">T</span>) mData);</span></span><br><span class="line"><span class="class">    &#125;</span></span><br></pre></td></tr></table></figure>
+
+
+<p>&emsp;&emsp;LifecycleBoundObserver是LiveData的内部类，也是LiveData的观察者，它主要对原始Observer的包装，把LifecycleOwner和Observer绑定在一起，它的作用就是事件回调：</p>
+<ul>
+<li>1.LiveData添加了观察者LifecycleBoundObserve</li>
+<li>2.其中有一个方法onStateChanged，首先判断LifecycleOwner是否变成DESTROYED状态，如果是则移除观察者</li>
+<li>3.如果当前的观察者是一个活跃的状态，就会调用LiveData的dispatchingValue()进行数据分发</li>
+<li>4.在这其中会判断当前的观察者包装器是否会为空，遍历所有的观察者</li>
+<li>5.最后回调真正的mObserver的onChanged()方法，值是LivaData的变量mData</li>
+</ul>
+<h4 id="setValue-value-、postValue-value"><a href="#setValue-value-、postValue-value" class="headerlink" title="setValue(value)、postValue(value)"></a>setValue(value)、postValue(value)</h4><figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">protected void set<span class="constructor">Value(T <span class="params">value</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">assert</span><span class="constructor">MainThread(<span class="string">"setValue"</span>)</span>;</span><br><span class="line">    mVersion++;</span><br><span class="line">    mData = value;</span><br><span class="line">    dispatching<span class="constructor">Value(<span class="params">null</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">protected void post<span class="constructor">Value(T <span class="params">value</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="module-access"><span class="module"><span class="identifier">Looper</span>.</span></span>my<span class="constructor">Looper()</span> != <span class="module-access"><span class="module"><span class="identifier">Looper</span>.</span></span>get<span class="constructor">MainLooper()</span>) &#123;</span><br><span class="line">        <span class="comment">// ...</span></span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    mPendingData = value;</span><br><span class="line">    <span class="keyword">if</span> (mPendingData<span class="operator"> == </span>NOT_SET) &#123;</span><br><span class="line">        <span class="comment">// ignore</span></span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    mMainThreadExecutor.execute(mPostValueRunnable);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;LiveData中的数据更新是通过setValue()和postValue()执行的。setValue()方法是在主线程中调用的，它会直接更新LiveData中的数据并通知所有的观察者进行UI更新；而postValue()方法是在异步线程中进行调用的，它会将要更新的数据封装成PendingPost对象，并提交给主线程的Handler处理</p>
+<ul>
+<li>1.postValue方法把Runable对象抛到主线程，其run方法中还是使用的setValue()</li>
+<li>2.setValue()把value赋值给mData，然后调用dispatchingValue(null)，参数是null。</li>
+</ul>
+<h2 id="六-LiveData使用注意事项"><a href="#六-LiveData使用注意事项" class="headerlink" title="六.LiveData使用注意事项"></a>六.LiveData使用注意事项</h2><ul>
+<li>数据丢失问题:<ul>
+<li>现象：在高频数据更新场景下使用postValue()可能导致数据丢失。</li>
+<li>原因：postValue()是异步操作，数据会先缓存，然后在主线程分发。如果短时间内多次调用postValue()，新值会覆盖旧值，导致旧值未被分发。</li>
+<li>场景：频繁更新数据的场景，例如进度条更新。</li>
+<li>解决方案：使用setValue()确保在主线程更新数据，避免并发问题。使用其他机制，如RxJava 或Channel 来处理高并发数据更新。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="七-小结"><a href="#七-小结" class="headerlink" title="七.小结"></a>七.小结</h2><p>&emsp;&emsp;<a href="https://developer.android.com/topic/libraries/architecture/livedata?hl=zh-cn" target="_blank" rel="noopener">官方文档</a>提供了更详细的 API说明和最佳实践指南。建议大家在实际项目中多实践，深入理解 LiveData 的设计思想和实现原理。LiveData 作为 Jetpack 架构组件的重要组成部分，为我们构建健壮、可维护的 Android 应用提供了强有力的支持。掌握 LiveData 的使用，将大大提升我们的开发效率和应用质量。在接下来的文章中，我们将继续探讨 Jetpack 四件套中的其他组件。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">Jetpack</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2026/03/28/Android%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84Jetpack%E5%9B%9B%E4%BB%B6%E5%A5%97%E4%B9%8BLiveData%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Android业务架构Jetpack四件套之LifeCycle篇（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -684,84 +828,6 @@ exchange.writeRequestHeaders(request)</code></pre>
 
 
   
-    <article id="post-okhttp源码分析之RetryAndFollowUpInterceptor篇（二）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">okhttp源码分析之RetryAndFollowUpInterceptor篇（二）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-05-27T11:29:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id=""><a href="#" class="headerlink" title=""></a></h1><h2 id="一-前言"><a href="#一-前言" class="headerlink" title="一.前言"></a>一.前言</h2><p>&emsp;&emsp;从前面的文章我们可以知道，OKHttp帮我们默认做了五步拦截处理，今天我们就针对RetryAndFollowUpInterceptor这个拦截器做一个分析</p>
-<hr>
-<h2 id="二-作用"><a href="#二-作用" class="headerlink" title="二.作用"></a>二.作用</h2><p>&emsp;&emsp;顾名思义，RetryAndFollowUpInterceptor是一个负责失败重连的拦截器，在网络请求的过程中，若我们想实现失败重连，就需要在OkHttpClient进行配置。但是我们需要注意的是请求失败被取消有可能会抛出io异常。我们依旧从源码出发，进行分析</p>
-        
-          <a class="article-more-a" href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/#more">more >></a>
-        
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">okhttp</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/27/okhttp%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BRetryAndFollowUpInterceptor%E7%AF%87%EF%BC%88%E4%BA%8C%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
       <a class="extend prev" rel="prev" href="/">Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/3/">Next</a>
@@ -887,6 +953,18 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">ai</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">无痕埋点</a>
               </li>
              
@@ -895,15 +973,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">插件化</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">activity启动流程</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color2">Classloader</a>
               </li>
              
               <li class="article-tag-list-item">
